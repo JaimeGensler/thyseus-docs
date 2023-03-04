@@ -1,0 +1,9 @@
+{
+	"*": {
+		"theme": { "breadcrumb": true }
+	},
+	"queries": "Queries",
+	"resources": "Resources",
+	"events": "Events",
+	"world": "World"
+}

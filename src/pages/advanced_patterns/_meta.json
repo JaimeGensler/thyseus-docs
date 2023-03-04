@@ -1,0 +1,7 @@
+{
+	"*": {
+		"theme": { "breadcrumb": true }
+	},
+	"custom_system_parameters": "Custom System Parameters",
+	"custom_executors": "Custom Executors"
+}

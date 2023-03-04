@@ -1,0 +1,11 @@
+# World
+
+On rare occasions, you may need access to the world itself. For this, Thyseus
+provides the `World` descriptor. In general, it is best to avoid accessing the
+world itself - most APIs that require direct access to the world are low-level
+and difficult to use correctly.
+
+For multithreading, accessing the World creates a hard sync point - no other
+system can run while the world is running. The world is also **always accessed
+from the main thread** - worlds in threads do not have access to all data, or
+the ability to communicate with threads other than the main thread.

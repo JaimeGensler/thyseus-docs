@@ -1,0 +1,24 @@
+{
+	"name": "thyseus-docs",
+	"version": "0.11.0",
+	"description": "",
+	"main": "index.js",
+	"scripts": {
+		"start": "next"
+	},
+	"keywords": [],
+	"author": "Jaime Gensler",
+	"license": "ISC",
+	"dependencies": {
+		"@types/react": "^18.0.28",
+		"next": "^13.2.3",
+		"nextra": "^2.2.17",
+		"nextra-theme-docs": "^2.2.17",
+		"react": "^18.2.0",
+		"react-dom": "^18.2.0"
+	},
+	"devDependencies": {
+		"@types/node": "18.14.6",
+		"typescript": "4.9.5"
+	}
+}

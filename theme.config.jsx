@@ -2,7 +2,8 @@ import React from 'react';
 import { useRouter } from 'next/router';
 
 export default {
-	docsRepositoryBase: 'https://github.com/JaimeGensler/thyseus-docs',
+	docsRepositoryBase:
+		'https://github.com/JaimeGensler/thyseus-docs/tree/main/',
 	useNextSeoProps() {
 		const { asPath } = useRouter();
 		if (asPath !== '/') {

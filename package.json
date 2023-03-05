@@ -4,7 +4,9 @@
 	"description": "",
 	"main": "index.js",
 	"scripts": {
-		"start": "next"
+		"dev": "next dev",
+		"build": "next build",
+		"start": "next start"
 	},
 	"keywords": [],
 	"author": "Jaime Gensler",

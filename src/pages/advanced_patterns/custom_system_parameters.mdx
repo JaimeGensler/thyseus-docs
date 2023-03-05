@@ -262,9 +262,11 @@ class ResourceDescriptor {
 And that's it for functionality. But if you try using this new descriptor in a
 system, you may notice some... less than ideal type support.
 
-<!-- prettier-ignore -->
+{/* prettier-ignore */}
 ```ts
-class ResourceDescriptor { /* All our code in here! */ }
+class ResourceDescriptor { 
+	/* All our code in here! */ 
+}
 
 class SomeResource {}
 
@@ -278,7 +280,7 @@ defineSystem(
 Our parameter isn't narrowed to be an instance of `SomeResource`, nor do we see
 that it's readonly. To fix this, we'll need to make our class generic.
 
-<!-- prettier-ignore -->
+{/* prettier-ignore */}
 ```ts
 class ResourceDescriptor<T extends Class | Mut<Class>> {
 	resource: Class;

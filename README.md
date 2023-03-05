@@ -1,10 +1,9 @@
 # Thyseus Documentation
 
-The docs for [Thyseus](https://github.com/JaimeGensler/thyseus)!
+[![pull requests: welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)](https://github.com/JaimeGensler/thyseus/pulls)
+[![code style: prettier](https://img.shields.io/badge/code%20style-prettier-ff69b4)](https://github.com/prettier/prettier)
 
-Currently not hosted anywhere, but they will be soon™! Please check out
-`src/pages/`, and submit issues for anything you'd like clarification/new docs
-on!
+The docs for Thyseus - available at [thyseus.dev](https://www.thyseus.dev).
 
 ## Contributing
 

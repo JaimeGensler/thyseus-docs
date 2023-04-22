@@ -1,7 +1,0 @@
-{
-	"*": {
-		"theme": { "breadcrumb": true }
-	},
-	"rules": "Rules",
-	"usage": "Usage"
-}

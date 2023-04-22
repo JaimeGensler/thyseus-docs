@@ -1,0 +1,32 @@
+---
+title: Commands
+---
+
+import { Aside } from ':ui';
+
+# Commands
+
+Commands are used to spawn & despawn entities, add components to & remove
+components from entities, and to clear event queues. Commands are _not_
+processed immediately - instead, they are added to a queue, which is processed
+in a system called `applyCommands`. The effects of commands are not observeable
+until _after_ commands are processed!
+
+By default, Thyseus adds `applyCommands` to the end of `CoreSchedule.Startup`
+and `CoreSchedule.Main`; however, you can import `applyCommands` and add it to
+whatever schedule you need, as many times as you need.
+
+<Aside type="tip">
+	`applyCommands` requires access to the World, and so will create a hard sync
+	point for multithreading. Try to avoid adding it more than necessary!
+</Aside>
+
+Let's take a quick look at what we can do with `Commands`!
+
+## Spawning Entities
+
+```ts
+function spawnEntities(commands: Commands) {
+	const entityCommands = commands.spawn();
+}
+```

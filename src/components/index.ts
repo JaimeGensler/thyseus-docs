@@ -1,2 +1,1 @@
-export { Aside } from './Aside';
-export { Tabs, Tab } from 'nextra-theme-docs';
+export { Layout as default } from './layout';

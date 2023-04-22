@@ -1,51 +1,13 @@
 {
-	"index": {
-		"title": "Home",
-		"theme": { "breadcrumb": false },
-		"display": "hidden"
+	"blog": {
+		"title": "Blog",
+		"type": "page",
+		"theme": {
+			"typesetting": "article"
+		}
 	},
-	"overview": {
-		"title": "Overview",
-		"theme": { "breadcrumb": false }
-	},
-	"installation_and_setup": {
-		"title": "Installation & Setup",
-		"theme": { "breadcrumb": false }
-	},
-	"getting_started": {
-		"title": "Getting Started",
-		"theme": { "breadcrumb": false }
-	},
-	"-": {
-		"type": "separator"
-	},
-
-	"components": {
-		"title": "Components",
-		"theme": { "breadcrumb": false }
-	},
-	"systems": {
-		"title": "Systems",
-		"theme": { "breadcrumb": false }
-	},
-	"multithreading": {
-		"title": "Multithreading",
-		"theme": { "breadcrumb": false }
-	},
-	"advanced_patterns": {
-		"title": "Advanced Patterns",
-		"theme": { "breadcrumb": false }
-	},
-	"--": {
-		"type": "separator"
-	},
-
-	"glossary": "Glossary",
-	"complete_api_docs": "Complete API",
-	"performance": {
-		"display": "hidden"
-	},
-	"table_of_contents": {
-		"display": "hidden"
+	"docs": {
+		"title": "Documentation",
+		"type": "page"
 	}
 }

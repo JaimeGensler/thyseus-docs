@@ -1,0 +1,125 @@
+---
+title: Installation & Setup
+---
+
+import { Tabs, Tab, Aside } from ':ui';
+
+# Installation & Setup
+
+## Package installation
+
+<Aside type="note">
+	**This guide assumes that you are using [Vite](https://vitejs.dev/) as your
+	bundler.** Currently, the official Thyseus transformer is only available as
+	a Vite plugin. If you'd like support to be added for your bundler of choice,
+	please [file a
+	ticket](https://github.com/JaimeGensler/thyseus/issues/new/choose)!
+</Aside>
+
+To get started with Thyseus, let's install the core library as well as the
+transformer plugin for Vite.
+
+{/* prettier-ignore */}
+<Tabs items={['pnpm', 'yarn', 'npm']}>
+	<Tab>
+		```sh copy
+		pnpm add thyseus && pnpm add -D @thyseus/transformer-vite
+		```
+	</Tab>
+		<Tab>
+		```sh copy
+		yarn add thyseus && yarn add -D @thyseus/transformer-vite
+		```
+	</Tab>
+	<Tab>
+		```sh copy
+		npm i thyseus && npm i -D @thyseus/transformer-vite
+		```
+	</Tab>
+</Tabs>
+
+`thyseus` is the actual core library, and where you'll be importing from for
+your project. `@thyseus/transformer-vite` is a plugin for Vite that transforms
+your source code, allowing Thyseus to provide a first-class developer
+experience. All docs will assume you're using the transformer - if you're not,
+you'll need to
+[review the systems documentation](/docs/systems#systems-without-the-transformer)
+
+As a data-oriented library, Thyseus is designed around types and how they flow
+thru your application; additionally, the transformer requires the use of
+Typescript to work correctly.
+
+{/* prettier-ignore */}
+<Tabs items={['pnpm', 'yarn', 'npm']}>
+	<Tab>
+		```sh copy
+		pnpm add -D typescript
+		```
+	</Tab>
+		<Tab>
+		```sh copy
+	yarn add -D typescript
+		```
+	</Tab>
+	<Tab>
+		```sh copy
+		npm i -D typescript
+		```
+	</Tab>
+</Tabs>
+
+If you don't have experience with Typescript, it's recommended that you
+[get familiar with the basics](https://www.typescriptlang.org/docs/handbook/typescript-in-5-minutes.html)
+before starting with Thyseus.
+
+## Plugin setup
+
+Next, let's add the transformer plugin to your config in order to get it working
+correctly:
+
+```ts filename="vite.config.ts"
+import { defineConfig } from 'vite';
+import { thyseusPlugin } from '@thyseus/transformer-vite';
+
+export default defineConfig({
+	plugins: [thyseusPlugin()],
+	// your other config...
+});
+```
+
+And that's all there is to it! Some third-party libraries for Thyseus may add
+configuration to `thyseusPlugin()` - you'll need to consult their documentation
+to see how to work with them.
+
+## Typescript setup (optional)
+
+Thyseus provides two way of accessing its types; direct imports from
+`'thyseus'`, or a global type injection. The choice of which to use is entirely
+up to you, and we do not recommend one approach over the other.
+
+If you'd like to use the global type injection, you can add a `.d.ts` file with
+the following:
+
+```ts filename="src/thyseusGlobals.d.ts"
+import 'thyseus/types';
+```
+
+And if you'd like to handle type imports yourself, any Thyseus types can be
+simply imported:
+
+```ts
+import type { Query, Res /* ...any types you want */ } from 'thyseus';
+```
+
+For the sake of brevity, code snippets in the docs will assume you are using the
+global type injection.
+
+## Development vs. production builds
+
+Thyseus uses [`esm-env`](https://github.com/benmccann/esm-env) to determine
+whether you're building your app for development or production. Dev builds have
+a number of additional correctness checks and validations that help you make
+sure your app works correctly and that thrown errors are easily debuggable.
+These checks come at the cost of speed, so for production builds these checks
+are stripped out. **As long as you're using a modern bundler, this should happen
+automatically.**

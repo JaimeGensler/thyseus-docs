@@ -1,0 +1,6 @@
+{
+	"navigation": [
+		{ "path": "index", "title": "Introduction" },
+		{ "path": "installation_and_setup", "title": "Installation & Setup" }
+	]
+}

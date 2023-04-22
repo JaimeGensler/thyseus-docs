@@ -1,0 +1,43 @@
+---
+title: System Resources
+---
+
+# System Resources
+
+System Resources are a variation of resources that are unique _per system_,
+rather than per world. This means that multiple system resources of the same
+type can exist in the world. System resources are always considered mutable, as
+they are owned by a single system. A system may also have multiple of the same
+type of system resource, each containing different values:
+
+```ts
+import { struct } from 'thyseus';
+
+@struct
+class A {
+	@struct.u32 declare value: number;
+}
+
+function mySystem(a1: Res<A>, a2: Res<A>) {
+	console.log(a1 === a2); // -> true
+}
+function mySystem(a1: SystemRes<A>, a2: SystemRes<A>) {
+	console.log(a1 === a2); // -> false
+}
+```
+
+If using multithreading, system resources - like normal resources - will be
+considered callable from any thread if decorated by `@struct`, and will be bound
+to the main thread otherwise. For structs, their values will be consistent
+across threads, making them a good replacement for mutable local closures, if
+necessary.
+
+System resources are scoped to the system that uses them; if a system exists in
+multiple schedules, or multiple times in the same schedule, it will _always_
+receive the same system resource! If your would like your system to receive
+different system resources, you'll want to use the exported `cloneSystem`
+function.
+
+Apart from their scope, system resources function identically to normal
+resources, `initialize` and all. In fact, the same class could be used both as a
+system resource and as a world resource!

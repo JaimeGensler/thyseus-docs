@@ -1,0 +1,132 @@
+---
+title: Resources
+---
+
+import { Aside } from ':ui';
+
+# Resources
+
+Resources are world-unique data that exist for the entire lifetime of the world.
+This means that, unlike components, they are not tied to a specific entity.
+Resources are the ideal way to handle things like time (frame number, delta,
+etc.), renderers, inputs, and other data that is unique to a world.
+
+## Defining resources
+
+Like components, resources are classes. Unlike components, they _can_ be, but
+are not required to be, decorated with `@struct`. Resources decorated with
+`@struct` will be accessible from any thread, while resources that are not will
+only be accessible on the main thread.
+
+```ts
+import { struct } from 'thyseus';
+
+// Systems using this resource could be called from any thread
+@struct
+class Time {
+	@struct.f64 declare previous: number;
+	@struct.f64 declare current: number;
+	@struct.f64 declare delta: number;
+	@struct.u32 declare frameNumber: number;
+}
+
+// Systems using this resource will only be called from the main thread
+class Renderer {
+	draw() {
+		// ...
+	}
+}
+```
+
+When these resources are used by systems, they will be refering to the same
+object (or, the same data for structs in worker threads):
+
+```ts
+class MyResource {}
+
+function aSystem(myResource: Res<MyResource>) {
+	// myResource here...
+}
+function anotherSystem(myResource: Res<MyResource>) {
+	// ... is the same object as myResource here!
+}
+```
+
+**Like component data, resources are readonly by default.**. If you'd like to
+mutate a resource, you can simply wrap it in `Mut<>`:
+
+```ts
+class MyResource {}
+
+function someSystem(myResource: Res<Mut<MyResource>>) {
+	// myResource can be mutated now!
+}
+```
+
+<Aside type="tip">
+	As mentioned, resources are _world-unique_ - only one instance of a class
+	will be constructed per world. If you have a type that you'd like to use as
+	multiple resources, you can simply subclass it.
+</Aside>
+
+## Initializing resources
+
+In some cases, you may want to access your resource from any thread, but it must
+run some initialization on the main thread. For these cases, we can implement a
+special `initialize` method that will be called when the world is built. Let's
+consider a `Keyboard` resource that tracks inputs.
+
+```ts
+import { struct } from 'thyseus';
+
+@struct
+class Keyboard {
+	@struct.bool declare W: boolean;
+	@struct.bool declare A: boolean;
+	@struct.bool declare S: boolean;
+	@struct.bool declare D: boolean;
+}
+```
+
+Hypothetically, there's no reason the state of the keyboard shouldn't be read
+from any thread. However, we need to set up event listeners to capture
+`'keydown'` and `'keyup'` events, which _does_ need to happen only on the main
+thread. Constructors are called on both threads, so that's not an option,
+either - this is the perfect use for an `initialize` method!
+
+```ts
+import { struct, type World } from 'thyseus';
+
+@struct
+class Keyboard {
+	@struct.bool declare W: boolean;
+	@struct.bool declare A: boolean;
+	@struct.bool declare S: boolean;
+	@struct.bool declare D: boolean;
+
+	// This will be called once, on the main thread, while the world is being built.
+	initialize(world: World) {
+		// You can safely access APIs only available in the main thread here.
+		const handler = (e: KeyboardEvent) => {
+			const isHeld = e.type === 'keydown';
+			if (e.code === 'KeyA') {
+				this.A = isHeld;
+			}
+			if (e.code === 'KeyD') {
+				this.D = isHeld;
+			}
+		};
+		window.addEventListener('keydown', handler);
+		window.addEventListener('keyup', handler);
+	}
+}
+```
+
+As you can see above, you can put any setup code you need in this method. If
+your resource has an `initialize` method, it'll be called once with the world
+initializing when that world is being built. If your setup is async, the
+`initialize` method is also allowed to return a promise, which will be `await`ed
+before continuing to build the world.
+
+Resources are not required to have an `initialize` method, **but it will be
+called if it exists** - you cannot use this method name for something else!

@@ -1,12 +1,16 @@
-import { Aside } from ':ui';
+---
+title: Memory API
+---
 
-# Memory
+import { Callout } from ':ui';
 
-<Aside type="error">
+# Memory API
+
+<Callout type="error">
 	Working directly with the `memory` API comes with significant risks.
 	Incorrect usage of the API can lead to corruption of any or all
 	Thyseus-specific data in an application. Proceed with extreme caution.
-</Aside>
+</Callout>
 
 Thyseus uses a custom memory allocator to gain fine-grain control over memory
 layout in applications. It allocates an ArrayBuffer when a world is built and
@@ -20,10 +24,10 @@ with the allocator that is not documented here (e.g., a minimum pointer value) -
 _no matter how consistent it appears to be_ - is **not** guaranteed behavior and
 could change in a patch or minor release, without documentation.
 
-<Aside type="warn">
+<Callout type="warn">
 	It is very easy to write broken code with this API, and there are very few
 	built-in guardrails against incorrect use - write tests!
-</Aside>
+</Callout>
 
 ## Allocating
 
@@ -66,10 +70,10 @@ const newPointer = memory.realloc(myPointer, 16);
 After a pointer has been reallocated, its previous value is invalid and must not
 be used.
 
-<Aside type="note">
+<Callout type="note">
 	As an optimization, `realloc()` will perform a zero-copy in-place grow if
 	possible. If it cannot, it will allocate, copy, and free.
-</Aside>
+</Callout>
 
 Bear in mind that `realloc()` cannot update pointers held locally in other
 threads. For example:
@@ -160,12 +164,12 @@ Now we're safely reallocating!
 
 ## Using Pointers
 
-<Aside type="error">
+<Callout type="error">
 	Memory that you have not claimed for yourself belongs to the allocator. The
 	allocator may use memory it owns for internal purposes; writing to values
 	the allocator owns will likely result in infinite loops, complete corruption
 	of data in the buffer, or both.
-</Aside>
+</Callout>
 
 Now that you own a section of memory, you may read and write values from it. The
 `memory.views` object exposes a view of every type over the entire buffer:

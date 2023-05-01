@@ -2,7 +2,7 @@
 title: Resources
 ---
 
-import { Aside } from ':ui';
+import { Callout } from ':ui';
 
 # Resources
 
@@ -63,11 +63,10 @@ function someSystem(myResource: Res<Mut<MyResource>>) {
 }
 ```
 
-<Aside type="tip">
-	As mentioned, resources are _world-unique_ - only one instance of a class
-	will be constructed per world. If you have a type that you'd like to use as
-	multiple resources, you can simply subclass it.
-</Aside>
+<Callout type="tip">
+	If you have a type that you'd like to use as multiple resources, you can
+	simply subclass it.
+</Callout>
 
 ## Initializing resources
 

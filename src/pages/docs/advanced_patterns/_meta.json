@@ -5,6 +5,6 @@
 			"title": "Custom Parameters"
 		},
 		{ "path": "custom_executors", "title": "Custom Executors" },
-		{ "path": "memory", "title": "Memory" }
+		{ "path": "memory", "title": "Memory API" }
 	]
 }

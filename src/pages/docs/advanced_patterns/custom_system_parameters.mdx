@@ -1,4 +1,8 @@
-import { Aside } from ':ui';
+---
+title: Custom System Parameters
+---
+
+import { Callout } from ':ui';
 
 # Custom System Parameters
 
@@ -55,10 +59,10 @@ This method is passed the world building the system, and whatever is returned
 from this method will be passed to systems when they are called. This method may
 return **anything**.
 
-<Aside type="note">
+<Callout type="note">
 	Promises returned by `intoArgument(world: World): any` will be `await`ed
 	before systems are called!
-</Aside>
+</Callout>
 
 ## Recreating `Res`
 

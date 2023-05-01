@@ -2,75 +2,54 @@
 title: Installation & Setup
 ---
 
-import { Tabs, Tab, Aside } from ':ui';
+import { Tabs, Tab, Callout } from ':ui';
 
 # Installation & Setup
 
 ## Package installation
 
-<Aside type="note">
-	**This guide assumes that you are using [Vite](https://vitejs.dev/) as your
-	bundler.** Currently, the official Thyseus transformer is only available as
-	a Vite plugin. If you'd like support to be added for your bundler of choice,
-	please [file a
-	ticket](https://github.com/JaimeGensler/thyseus/issues/new/choose)!
-</Aside>
+<Callout type="note">
+	**This guide assumes that you are using a [Rollup](https://rollupjs.org/)-
+	or [Webpack](https://webpack.js.org/)-based bundler.** The official Thyseus
+	transformer is available as a (Vite-compatible) Rollup plugin and a webpack
+	plugin. If you'd like support to be added for your bundler of choice, please
+	[file a ticket](https://github.com/JaimeGensler/thyseus/issues/new/choose)!
+</Callout>
 
-To get started with Thyseus, let's install the core library as well as the
-transformer plugin for Vite.
-
-{/* prettier-ignore */}
-<Tabs items={['pnpm', 'yarn', 'npm']}>
-	<Tab>
-		```sh copy
-		pnpm add thyseus && pnpm add -D @thyseus/transformer-vite
-		```
-	</Tab>
-		<Tab>
-		```sh copy
-		yarn add thyseus && yarn add -D @thyseus/transformer-vite
-		```
-	</Tab>
-	<Tab>
-		```sh copy
-		npm i thyseus && npm i -D @thyseus/transformer-vite
-		```
-	</Tab>
-</Tabs>
-
-`thyseus` is the actual core library, and where you'll be importing from for
-your project. `@thyseus/transformer-vite` is a plugin for Vite that transforms
-your source code, allowing Thyseus to provide a first-class developer
-experience. All docs will assume you're using the transformer - if you're not,
-you'll need to
-[review the systems documentation](/docs/systems#systems-without-the-transformer)
-
-As a data-oriented library, Thyseus is designed around types and how they flow
-thru your application; additionally, the transformer requires the use of
-Typescript to work correctly.
+To get started with Thyseus, let's install the core library:
 
 {/* prettier-ignore */}
 <Tabs items={['pnpm', 'yarn', 'npm']}>
 	<Tab>
-		```sh copy
-		pnpm add -D typescript
+		```sh
+		pnpm add thyseus
 		```
 	</Tab>
 		<Tab>
-		```sh copy
-	yarn add -D typescript
+		```sh
+		yarn add thyseus
 		```
 	</Tab>
 	<Tab>
-		```sh copy
-		npm i -D typescript
+		```sh
+		npm i thyseus
 		```
 	</Tab>
 </Tabs>
 
-If you don't have experience with Typescript, it's recommended that you
+Sweet! Next, let's get the Thyseus transformer. The transformer transpiles your
+code to make it more performant and to provide better DX. All docs will assume
+you're using the transformer - if you're not, you'll need to
+[review the systems docs](/docs/core_concepts/systems#systems-without-the-transformer).
+
+The transformer also depends on the use of Typescript; if you don't have
+experience with Typescript, it's recommended that you
 [get familiar with the basics](https://www.typescriptlang.org/docs/handbook/typescript-in-5-minutes.html)
 before starting with Thyseus.
+
+```sh
+pnpm add typescript @thyseus/transformer-rollup
+```
 
 ## Plugin setup
 
@@ -87,25 +66,22 @@ export default defineConfig({
 });
 ```
 
-And that's all there is to it! Some third-party libraries for Thyseus may add
-configuration to `thyseusPlugin()` - you'll need to consult their documentation
-to see how to work with them.
+And that's all there is to it!
 
 ## Typescript setup (optional)
 
-Thyseus provides two way of accessing its types; direct imports from
-`'thyseus'`, or a global type injection. The choice of which to use is entirely
-up to you, and we do not recommend one approach over the other.
+As Thyseus is a data-oriented library, you'll be making heavy use of its types.
+Thyseus provides two way of accessing types - direct imports from `'thyseus'`,
+or a global type injection. The choice of which to use is entirely up to you!
 
-If you'd like to use the global type injection, you can add a `.d.ts` file with
-the following:
+If you'd like to use global type injection, you can add a `.d.ts` file with the
+following:
 
 ```ts filename="src/thyseusGlobals.d.ts"
 import 'thyseus/types';
 ```
 
-And if you'd like to handle type imports yourself, any Thyseus types can be
-simply imported:
+If you'd rather not, types can simply be imported:
 
 ```ts
 import type { Query, Res /* ...any types you want */ } from 'thyseus';

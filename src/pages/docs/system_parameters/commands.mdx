@@ -2,7 +2,7 @@
 title: Commands
 ---
 
-import { Aside } from ':ui';
+import { Callout } from ':ui';
 
 # Commands
 
@@ -16,10 +16,10 @@ By default, Thyseus adds `applyCommands` to the end of `CoreSchedule.Startup`
 and `CoreSchedule.Main`; however, you can import `applyCommands` and add it to
 whatever schedule you need, as many times as you need.
 
-<Aside type="tip">
+<Callout type="tip">
 	`applyCommands` requires access to the World, and so will create a hard sync
 	point for multithreading. Try to avoid adding it more than necessary!
-</Aside>
+</Callout>
 
 Let's take a quick look at what we can do with `Commands`!
 

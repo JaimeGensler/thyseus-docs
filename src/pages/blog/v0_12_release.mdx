@@ -1,37 +1,34 @@
 ---
 title: v0.12 Release
-jaime: true
+date: May 05, 2023
+author: jaime
 ---
 
-import { Aside } from ':ui';
+# v0.12 Release
 
-# Thyseus v0.12 Release
-
-Hey - thanks for checking out the blog, home of the most up-to-date info on
+Hey - thanks for checking out the blog, hosting the most up-to-date info on
 what's happening with Thyseus! I hope you're enjoying the new design - this
-fresh coat of paint also comes with partial rewrites to much of the
-documentation, and a bunch of new stuff, too!
+fresh coat of paint also comes with rewrites to many of the docs as well as a
+new (hopefully clearer) structure.
 
 If you're new here, Thyseus is a multi-threadable, DX-focused, and highly
 performant archetypal Entity Component System (ECS) written entirely in
 Typescript; check out the docs to learn more and get started.
 
-With that, we've got to cover Thyseus' biggest (and most exciting) update yet,
-so let's get into it!
+With that, we've got to cover our biggest (and most exciting) update yet, so
+let's get into it!
 
-## The transformer
+## The Transformer
 
-Thyseus v0.12 is releasing with a sibling package - the Thyseus transformer! The
-transformer has a ton of potential, but for now its singularly focused. The
-transformer isn't required, but it will be considered the "canonical" way to
-develop with Thyseus.
+v0.12 is releasing with a sibling package - the Thyseus transformer! The
+transformer has a ton of potential, but for now it has a single job (which we'll
+get to soon). The transformer isn't required, but moving forward it will be
+considered the "canonical" way to develop with Thyseus.
 
-<Aside type="note">
-	**The transformer is currently only available as a
-	[Vite](https://vitejs.dev/) plugin.** Please don't hesitate to [open a
-	request](https://github.com/JaimeGensler/thyseus-transformer/issues) for a
-	similar plugin for your bundler of choice.
-</Aside>
+For its first release, **the transformer is available as either a Webpack plugin
+or a (Vite-compatible) Rollup plugin**. Please don't hesitate to
+[open a request](https://github.com/JaimeGensler/thyseus-transformer/issues) for
+a similar plugin for your bundler of choice.
 
 Install:
 
@@ -51,18 +48,18 @@ export default defineConfig({
 });
 ```
 
-And you're good to go! The transformer's version will always match Thyseus'
-current version, so always update both.
+And you're good to go. Thyseus and the transformer will always match versions,
+so update both!
 
 ## Systems
 
-**Systems are now just functions** - thanks to the transformer, we removed
-`defineSystem()`, and you don't need to fuss with parameter creators anymore.
-Type your systems and let the transformer handle the rest!
+**Systems are now just functions** - `defineSystem()` has been removed, and you
+don't need to fuss with parameter creators anymore. Type your systems and let
+the transformer handle the rest!
 
 ```ts
 // The classic example
-function movementSystem(query: Query<[Mut<Position>, Velocity]>) {
+function moveEntities(query: Query<[Mut<Position>, Velocity]>) {
 	for (const [pos, vel] of query) {
 		pos.x += vel.x;
 		pos.y += vel.y;
@@ -70,33 +67,28 @@ function movementSystem(query: Query<[Mut<Position>, Velocity]>) {
 	}
 }
 
-// Something a little out there
-function aSystemThatUsesEveryParameterTypeForSomeReason(
-	world: World,
-	commands: Commands,
-	query: Query<[Mut<Position>, Velocity], With<IsPlayer>>,
-	time: Res<Time>,
-	localData: SystemRes<Set<string>>,
-	eventReader: EventReader<LevelUpEvent>,
-	eventWriter: EventWriter<LevelUpEvent>,
-) {
-	// I wonder what this would even do?
+function spawnEntities(commands: Commands) {
+	commands.spawn().addType(Position).addType(Velocity);
+}
+
+function handleLevelUps(eventReader: EventReader<LevelUpEvent>) {
+	// ... whatever you need to do here
 }
 
 // Later
 
 const world = await World.new()
-	.addSystems(movementSystem)
-	.addSystems(aSystemThatUsesEveryParameterTypeForSomeReason)
+	// A teaser of what's coming up!
+	.addSystems(moveEntities, spawnEntities, handleLevelUps)
 	.build();
 ```
 
-Yup, that works. ✨
+Yep, that just works. ✨
 
 It's been a goal from the very beginning to provide this API, so we're pretty
-stoked to have finally reached this milestone. Bear in mind that this is the
-first version of the transformer, so despite rigorous testing, it's possible
-that some bugs have made it in; be sure to report any issues you find.
+stoked to have finally reached this milestone. Given this is the first version
+of the transformer, it's possible that some bugs have made it in despite
+rigorous testing; be sure to report any issues you find.
 
 The transformer allows one-off transformation opt-outs - add a comment with
 `thyseus-ignore` before the code you want preserved, and the transformer will
@@ -105,16 +97,13 @@ simply skip that node.
 If you're wondering about custom system parameters, don't worry -
 [we've got you covered](/docs/advanced_patterns/custom_system_parameters#transforming-system-parameters).
 
-### Systems without transformation
+### Systems Without Transformation
 
-The transformer takes care of adding a `parameters` property to your system
-functions for you. The `parameters` property is an array of system parameter
-descriptors; worlds read these descriptors to determine what arguments to supply
-to the system.
-
-If you're not using Typescript, are building a 3rd party plugin, or are
-otherwise opting out of system transformation, systems are still easy to write:
-just add the `parameters` property and create the descriptors yourself:
+The transformer adds a `parameters` property to your system functions for you.
+The `parameters` property is an array of system parameter descriptors; worlds
+read these descriptors to determine what arguments to supply to the system. If
+you're opting out of system transformation, systems are still easy to write -
+just add the `parameters` property and create the descriptors yourself.
 
 ```js
 // New import specifically for descriptors
@@ -125,7 +114,7 @@ export function mySystem(resource) {}
 mySystem.parameters = [ResourceDescriptor(MyResourceType)];
 ```
 
-### Usage tips
+### Usage Tips
 
 If you're using the transformer, there are a couple things to note.
 
@@ -145,32 +134,33 @@ const systemB = function systemBInner(world: World) {};
 const systemC = (world: World) => {};
 ```
 
--   **Type aliases are not permitted;** simple aliases
-    (`type MyQuery = Query<...>`), or "namespaced" types (`Thyseus.Commands`)
-    will not be transformed. Don't worry - we plan to add support in the future!
+-   **Type aliases (including import aliases) are not permitted;** simple
+    aliases (`type MyQuery = Query<...>`), or "namespaced" types
+    (`Thyseus.Commands`) will not be transformed. Don't worry - we plan to add
+    support in the future!
 -   **Functions with rest parameters will not be transformed,** even if the
     parameters are typed as a tuple containing only valid system parameters.
 -   **Import the full class, not just the type.** When using class types, the
-    transformer assumes the actual class is in scope, so if you're getting a
-    reference error, it's probably because of this.
+    transformer assumes the actual class is in scope; if you get a reference
+    error, it's probably this.
 -   **Systems can't be generic.** Of course, you can still create generic "base"
     functions and call them in systems with your non-generic data.
 -   **Functions that accept only system parameters will have a `parameters`
-    property added.** You can ignore this or `//thyseus-ignore` it - up to you!
+    property added.** This is more-or-less harmless; you can ignore or
+    `//thyseus-ignore` it - up to you!
 
 ## Types
 
 With the changes to systems, we've made sure to **export _all_ the types**. Even
-better, this is a two-for-one deal - you can choose between type imports
-directly from `'thyseus'`, or a global type injection. The choice of which of
-these you use is up to you; the docs assume global type imports for the sake of
-brevity, but go with whatever feels right.
+better, you have _two_ options for types - you can import types, _or_ use a
+global type injection. The choice of which of these you use is up to you - the
+docs assume global type imports for the sake of brevity.
 
-### Direct type imports
+### Direct Type Imports
 
 Don't want a library injecting its types into the global scope? We get it - by
 default, Thyseus **does not** add types to the global scope. Import directly
-from 'thyseus' for all your type needs:
+from `'thyseus'` for all your type needs:
 
 ```ts
 import type { Commands, SystemRes } from 'thyseus';
@@ -181,23 +171,24 @@ function mySystem(
 ) {}
 ```
 
-### Global type injection
+### Global Type Injection
 
-Tired of writing imports? Me too - this is the way for you! Add the
-`'thyseus/types'` import anywhere (I recommend a `src/thyseusGlobals.d.ts`
-file), and all Thyseus types will be available, anywhere in your project:
+Tired of writing imports? Me too. Import `'thyseus/types'` (we recommend a
+`src/thyseusGlobals.d.ts` file) and all Thyseus types will be available anywhere
+in your project:
 
 ```ts filename="src/thyseusGlobals.d.ts"
 import 'thyseus/types';
 ```
 
-## System scheduling
+## System Scheduling
 
 System scheduling has needed rethinking for a while. It's become clear that a
-single `update()` method on worlds is lackluster DX. Worse, it fails to make it
-clear, easy, or in some cases _possible_ to incorporate patterns like fixed time
-steps or custom execution logic. As is the trend with Thyseus' development, we
-took inspiration from [Bevy](https://bevyengine.org/) and their stagless update.
+single `update()` method is lackluster DX. Worse, it fails to make it clear,
+easy, or in some cases _possible_ to incorporate patterns like fixed time steps
+or custom execution logic. As is the trend with Thyseus' development, we took
+inspiration from [Bevy](https://bevyengine.org/) and their stagless update to
+rethink this API.
 
 ### Schedules
 
@@ -271,23 +262,24 @@ export const myWorld = await World.new()
 `world.runSchedule(schedule: symbol)` runs a single schedule; it returns a
 promise that only resolves when every system in that schedule has completed
 executing. You must await this promise before calling `world.runSchedule()`
-again in the same system.
+again in the same scope.
 
-`world.start()` is responsible for starting up your app. It runs startup systems
-and establishes a typical game loop with `requestAnimationFrame()`. You can
-customize the behavior of `start()` by adding systems to `CoreSchedule.Outer`.
+`world.start()` is responsible for starting up your app. By default, it runs
+startup systems and establishes a typical game loop with
+`requestAnimationFrame()`. We also provide a built-in way to customize the
+behavior of `start()`.
 
 For now, there are four schedules provided out of the box:
 
 -   `CoreSchedule.Startup` is the schedule for startup systems. By default, this
-    schedule will run exactly once when `world.start()`.
--   `CoreSchedule.Main` is the main schedule for systems - this is the schedule
-    that systems are added to when you call `world.addSystems()`. By default,
-    this schedule will run once per frame.
+    schedule will run exactly once when `world.start()` is called.
+-   `CoreSchedule.Main` is the "main schedule", where systems are added when you
+    call `worldBuilder.addSystems()`. By default, this schedule will run once
+    per frame.
 -   `CoreSchedule.FixedUpdate` is intended for systems that must run at a
     consistent rate, like physics systems. By default, this schedule is run 0 or
-    more times per frame, depending on the time passed since its last run. By
-    default, it targets 50 updates/second (20ms timestep), and executes _after_
+    more times per frame, depending on the time passed since its last run and
+    targets 50 updates/second (20ms timestep). It executes _after_
     `CoreSchedule.Main`.
 -   `CoreSchedule.Outer` controls the execution of all other schedules. By
     default, it contains one system (`runInnerSchedules`) that runs the startup
@@ -297,7 +289,7 @@ For now, there are four schedules provided out of the box:
 
 ## System dependencies
 
-We're overhauling the system dependency API again. The old API had potentially
+We're overhauling the system dependency API again. The old API had too many
 confusing gotchas, like potentially different results depending on where you
 called `systemA.before(systemB)` and ignoring ordering constraints if it thought
 the order was unobservable. The new API allows clearer, more predictable
@@ -305,9 +297,9 @@ dependencies and **always respects them**.
 
 ### `run()`
 
-Dependencies can be specified with the new `run()` function. It returns a
-`SystemConfig` object, which can be used to specify dependencies (and in the
-future, even more).
+Dependencies now use a new `run()` function. Pass it a system and it returns a
+`SystemConfig` object, which can be used to specify ordering constraints (and in
+the future, even more).
 
 ```ts
 import { World, run } from 'thyseus';
@@ -321,6 +313,8 @@ export const myWorld = await World.new()
 	)
 	.build();
 ```
+
+Reads like a book!
 
 Note that you're only actually adding the single system that `run()` wraps.
 Methods are included for `before()`, `after()`, `first()` and `last()`. The new
@@ -342,22 +336,22 @@ to the `chain` function - in the above case, `systemA`, then `systemB`, then
 
 ## Other changes
 
-### World config changes
+### World configuration
 
 The `memory` option has been renamed to `memorySize` to be more descriptive of
 what the option controls.
 
 You can use the `useSharedMemory: boolean` option to force the use of
 `SharedArrayBuffer` for single-threaded worlds. When set to true,
-`isSecureContext` must be true, but you don't need to pass a worker url. When
-using multithreading, this option is ignored. The default is `false`.
+`isSecureContext` must be true, but you don't need to pass a worker URL. This
+option is ignored for multithreading. The default is `false`.
 
-You can now specify whether the current thread is the main thread with
+You can specify whether the current thread is the main thread with
 `isMainThread: boolean`, which should significantly improve the useability of
 Thyseus in non-browser environments. The default for this option is a
-browser-oriented main-thread check: `typeof window !== 'undefined'`.
+browser-oriented main-thread check: `typeof document !== 'undefined'`.
 
-### Table changes
+### Tables
 
 Tables are no longer constructed on worker threads. This probably doesn't mean
 much to you, unless you previously tried to access tables on threads. Table
@@ -387,11 +381,9 @@ function yourPlugin(builder: WorldBuilder) {
 
 Internally, we've removed the need for creating thread message channels. While
 it's possible this need will return, the current API isn't really up to our
-standards and so has been removed for the time being.
-
-Currently, if you still happen to need a way of creating thread message
-channels, it is still possible to add the handlers directly after building a
-world.
+standards and so has been removed for the time being. If you still need a way of
+creating thread message channels, it's thread-safe to add handlers directly
+after building a world.
 
 ### Entity component
 

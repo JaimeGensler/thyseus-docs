@@ -1,4 +1,8 @@
-import { Aside } from ':ui';
+---
+title: Custom Executors
+---
+
+import { Callout } from ':ui';
 
 # Custom Executors
 
@@ -64,12 +68,12 @@ class SimpleExecutor {
 
 And as with most APIs, you may choose to implement this however you wish!
 
-<Aside type="note">
+<Callout type="note">
 	The world is still being constructed when `fromWorld()` is called. All
 	properties (except `executor`) have been set, _but not all properties have
 	been populated_ (e.g., `world.resources` is accessible but will have no
 	contents).
-</Aside>
+</Callout>
 
 ## ThreadGroup Queues
 

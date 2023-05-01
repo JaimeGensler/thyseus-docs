@@ -2,7 +2,7 @@
 title: Queries
 ---
 
-import { Aside } from ':ui';
+import { Callout } from ':ui';
 
 # Queries
 
@@ -39,11 +39,11 @@ system, we iterate over each of those entities and log the value of the entity's
 component. In this example, the yielded `myComp` values will be instances of
 `MyComponent`.
 
-<Aside type="warn">
+<Callout type="warn">
 	You **should not** grab and hold a reference to the component instance for
 	use outside of iteration, as Thyseus re-uses component instances for
 	performance reasons.
-</Aside>
+</Callout>
 
 But what if you want to access multiple components in the same query? No
 problem, just use a tuple:

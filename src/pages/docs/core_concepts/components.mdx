@@ -2,7 +2,7 @@
 title: Components
 ---
 
-import { Aside } from ':ui';
+import { Callout } from ':ui';
 
 # Components
 
@@ -39,8 +39,8 @@ class Health {
 }
 
 // If you were iterating Entities with a health component:
-let health: Health;
-console.log(`${health.current}/${health.max}`);
+const health = new Health();
+console.log(`${health.current}/${health.max}`); // 0 / 0
 health.current = 3;
 console.log(health.current); // 3
 ```
@@ -51,11 +51,11 @@ component! Properties on that class **_must_** be decorated as well with the
 type of that property. Just like any other class, your components may or may not
 contain methods.
 
-<Aside type="warn">
+<Callout type="warn">
 	Thyseus cannot see non-decorated properties! If you declare a property on
 	your class without a decorator, you will not have consistent, predictable
 	behavior!
-</Aside>
+</Callout>
 
 Thyseus also allows granular control of your numeric types. While Javascript
 must behave as
@@ -63,19 +63,19 @@ must behave as
 Thyseus requires you declare more specifically what sort of number a property
 is. The primitive types are all properties of `@struct`, and are listed below:
 
-| **Name** | **Description**              | **Size (bytes)** | **JS Type** |
-| -------- | ---------------------------- | ---------------- | ----------- |
-| u8       | Unsigned 8-bit integer       | 1                | number      |
-| u16      | Unsigned 16-bit integer      | 2                | number      |
-| u32      | Unsigned 32-bit integer      | 4                | number      |
-| u64      | Unsigned 64-bit integer      | 8                | bigint      |
-| i8       | Signed 8-bit integer         | 1                | number      |
-| i16      | Signed 16-bit integer        | 2                | number      |
-| i32      | Signed 32-bit integer        | 4                | number      |
-| i64      | Signed 64-bit integer        | 8                | bigint      |
-| f32      | 32-bit Floating Point number | 4                | number      |
-| f64      | 64-bit Floating Point number | 8                | number      |
-| bool     | Boolean (`true`/`false`)     | 1                | boolean     |
+| Name | Description                  | Size (bytes) | JS Type |
+| ---- | ---------------------------- | ------------ | ------- |
+| u8   | Unsigned 8-bit integer       | 1            | number  |
+| u16  | Unsigned 16-bit integer      | 2            | number  |
+| u32  | Unsigned 32-bit integer      | 4            | number  |
+| u64  | Unsigned 64-bit integer      | 8            | bigint  |
+| i8   | Signed 8-bit integer         | 1            | number  |
+| i16  | Signed 16-bit integer        | 2            | number  |
+| i32  | Signed 32-bit integer        | 4            | number  |
+| i64  | Signed 64-bit integer        | 8            | bigint  |
+| f32  | 32-bit Floating Point number | 4            | number  |
+| f64  | 64-bit Floating Point number | 8            | number  |
+| bool | Boolean (`true`/`false`)     | 1            | boolean |
 
 If you're coming from a Javascript background and are not used to working with
 multiple numeric types, don't worry; `@struct.f64` works like the numbers you're
@@ -96,7 +96,8 @@ class Health {
 	@struct.u16 declare current: number;
 
 	constructor(max = 100, current = max) {
-		initStruct(this); // You must call initStruct before accessing fields!
+		// You must call initStruct before accessing fields!
+		initStruct(this);
 
 		this.max = max;
 		this.current = current;
@@ -111,9 +112,10 @@ to set default values of components when adding them to entities - for example,
 in the above case, if you add the `Health` component to an entity without
 specifying a `current` and `max` value, both will be set to 100.
 
-<Aside type="warn">
-	Avoid constructing structs yourself (e.g. `new MyStruct()`)!
-</Aside>
+### Avoiding construction
+
+In general, it is best to **avoid constructing structs yourself** (e.g.
+`new MyStruct()`).
 
 Thyseus takes responsibility for the lifetime of objects that it creates;
 however, **if you call a constructor yourself, you become responsible for

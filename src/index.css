@@ -2,8 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+	scroll-behavior: smooth;
+}
 body {
-	@apply bg-gray-900 text-gray-200;
+	@apply text-gray-200 bg-primary;
 }
 
 :root {
@@ -27,6 +30,29 @@ body {
 	50% {
 		opacity: 0.4;
 	}
+}
+
+/* @keyframes waves {
+	0%,
+	100% {
+		transform: translate(0px, 0px);
+	}
+
+	25% {
+		transform: translate3d(6px, 4px, 0);
+	}
+
+	50% {
+		transform: translate3d(10px, 12px, 0);
+	}
+
+	75% {
+		transform: translate3d(5px, 7px, 0);
+	}
+} */
+
+.animate-waves {
+	animation: waves 14s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 .animate-twinkle {

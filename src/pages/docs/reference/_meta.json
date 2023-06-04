@@ -1,0 +1,6 @@
+{
+	"navigation": [
+		{ "path": "complete_api_docs", "title": "Complete API Docs" },
+		{ "path": "glossary", "title": "Glossary" }
+	]
+}

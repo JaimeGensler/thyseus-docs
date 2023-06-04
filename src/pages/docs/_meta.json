@@ -1,0 +1,10 @@
+{
+	"navigation": [
+		{ "path": "getting_started", "title": "Getting Started" },
+		{ "path": "core_concepts", "title": "Core Concepts" },
+		{ "path": "system_parameters", "title": "System Parameters" },
+		{ "path": "multithreading", "title": "Multithreading" },
+		{ "path": "advanced_patterns", "title": "Advanced Patterns" },
+		{ "path": "reference", "title": "Reference" }
+	]
+}

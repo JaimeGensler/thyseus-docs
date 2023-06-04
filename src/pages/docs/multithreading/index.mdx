@@ -1,0 +1,52 @@
+---
+title: Multithreading
+---
+
+import { Callout } from ':ui';
+
+# Multithreading
+
+As with any other Javascript, your code runs on a single thread by default.
+However, Thyseus empowers you to take advantage of parallelism with a simple
+change of configuration. You don't need to worry about scheduling, locks,
+creating and communicating between workers, or how to share/propogate data - all
+of this is handled internally!
+
+It also provides a number of safety guarantees. Parallelism is enabled by taking
+advantage of technologies offered by modern browsers; **there is not and will
+never be unsafe code**, such as using `eval` or eval-like constructs, creating
+workers from blobs, or any other type of run-time code generation. Your Thyseus
+projects are exactly as safe as the code _you_ write, and changing between
+single/multithreading does not change this.
+
+**Parallelism won't necessarily automatically improve the performance of your
+applications** - in fact, in simpler projects it will likely _harm_ performance.
+If and by how much parallelism can help your performance depends on a number of
+factors including the number of systems you have & how parallelizable they are,
+the number of threads, the parallel executor implementation, the target
+environment, and more. Benchmark to see if it helps in your case!
+
+## Compatability with other multithreading solutions
+
+Thyseus's parallelism is not designed to be easily compatible with other
+multithreading solutions. While this is an area for future exploration, for now
+there are a couple workarounds.
+
+If you would like to use a different multithreading model altogether, you can
+still specify that you want Thyseus to use a `SharedArrayBuffer` for your data
+in your world configuration:
+
+```ts
+import { World } from 'thyseus';
+
+// Thyseus will not construct its own threads, but it will use SharedArrayBuffer
+const myWorld = World.new({ threads: 1, useSharedMemory: true });
+```
+
+Alternatively, if the functionality of other libraries can be expressed as
+Thyseus systems, they should be able to reap the benefits of multithreading as
+well.
+
+Finally, [custom executors](/advanced_patterns/custom_executors) can also be
+used to change the way systems are executed in parallel according to your own
+needs.

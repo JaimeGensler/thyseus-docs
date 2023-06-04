@@ -1,27 +1,4 @@
-import React from 'react';
-import { useRouter } from 'next/router';
-
 export default {
-	docsRepositoryBase:
-		'https://github.com/JaimeGensler/thyseus-docs/tree/main/',
-	useNextSeoProps() {
-		const { asPath } = useRouter();
-		if (asPath !== '/') {
-			return {
-				titleTemplate: '%s | Thyseus',
-			};
-		}
-	},
-	logo: <span>Thyseus</span>,
-	project: {
-		link: 'https://github.com/JaimeGensler/thyseus',
-	},
-	darkMode: false,
-	toc: {
-		float: false,
-	},
-	footer: {
-		component: null,
-	},
-	// ...
+	projectRepository: 'https://github.com/JaimeGensler/thyseus',
+	docsRepository: 'https://github.com/JaimeGensler/thyseus-docs/tree/main/',
 };

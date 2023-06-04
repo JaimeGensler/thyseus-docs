@@ -1,0 +1,10 @@
+{
+	"navigation": [
+		{ "path": "queries", "title": "Queries" },
+		{ "path": "commands", "title": "Commands" },
+		{ "path": "resources", "title": "Resources" },
+		{ "path": "system_resources", "title": "System Resources" },
+		{ "path": "events", "title": "Events" },
+		{ "path": "world", "title": "World" }
+	]
+}

@@ -3,7 +3,7 @@ import { Card } from './Card';
 
 export function Cards() {
 	return (
-		<div className="grid grid-cols-3 tablet:gap-4 desktop:gap-16">
+		<div className="grid grid-cols-1 tablet:grid-cols-3 gap-4 desktop:gap-16 px-2">
 			<Card>
 				<div className="w-16 h-16 text-accent">
 					<Icon

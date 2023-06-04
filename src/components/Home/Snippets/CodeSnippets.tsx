@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 export function CodeSnippets() {
 	return (
-		<div className="grid grid-cols-1 desktop:grid-cols-2 gap-16">
+		<div className="grid grid-cols-1 desktop:grid-cols-2 gap-16 px-2">
 			<Code href="/docs/core_concepts/components" snippet={Components}>
 				<span>Components</span>
 				{' as '}
@@ -32,7 +32,7 @@ function Code({
 				<h2 className="text-2xl leading-6">{children}</h2>
 			</div>
 
-			<pre className="border border-primary-light rounded-xl pt-6 pb-2 px-4 text-sm group-hover:bg-primary-light group-focus:bg-primary-light group-hover:shadow-xl transition-colors">
+			<pre className="border border-primary-light rounded-xl pt-6 pb-2 px-4 text-sm group-hover:bg-primary-light group-focus:bg-primary-light group-hover:shadow-xl transition-colors overflow-x-auto">
 				<Snippet />
 			</pre>
 		</Link>

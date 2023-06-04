@@ -12,9 +12,6 @@ export function Home() {
 
 	return (
 		<div className="relative min-h-screen">
-			<Head>
-				<title>Thyseus</title>
-			</Head>
 			<Header
 				hideLogo={!hasScrolled}
 				className={clsx(

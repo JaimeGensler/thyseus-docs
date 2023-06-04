@@ -19,22 +19,22 @@ export function Landing() {
 			<Glow className="absolute w-full left-0 -bottom-8" />
 
 			{/* Waves are ordered back-to-front */}
-			<Wave className="absolute w-[120%] left-[15%] -bottom-[4.5rem] -scale-x-[1] text-[#00346A] animate-waves animate-delay-2" />
-			<Wave className="absolute w-[115%] -left-[10%] -bottom-20 -scale-x-[1] text-[#002D5B] animate-waves animate-delay-4" />
-			<Wave className="absolute w-[116%] -left-[12%] -bottom-24 text-[#002851] animate-waves animate-delay-8" />
-			<Wave className="absolute w-[118%] -left-[2%] -bottom-32 -scale-x-[1] text-[#002143] animate-waves animate-delay-10" />
-			<Wave className="absolute w-[116%] -left-[13%] -bottom-36 text-[#001933] animate-waves animate-delay-12" />
-			<Wave className="absolute w-[122%] -left-[2%] -bottom-44 -scale-x-[1] text-primary animate-waves" />
+			<Wave className="absolute w-[120%] left-[15%] bottom-24 tablet:-bottom-[4.5rem] -scale-x-[1] text-[#00346A] animate-waves animate-delay-2" />
+			<Wave className="absolute w-[115%] -left-[10%] bottom-20 tablet:-bottom-20 -scale-x-[1] text-[#002D5B] animate-waves animate-delay-4" />
+			<Wave className="absolute w-[116%] -left-[12%] bottom-16 tablet:-bottom-24 text-[#002851] animate-waves animate-delay-8" />
+			<Wave className="absolute w-[118%] -left-[2%] bottom-12 tablet:-bottom-32 -scale-x-[1] text-[#002143] animate-waves animate-delay-10" />
+			<Wave className="absolute w-[116%] -left-[13%] bottom-8 tablet:-bottom-36 text-[#001933] animate-waves animate-delay-12" />
+			<Wave className="absolute w-[122%] -left-[2%] bottom-0 tablet:-bottom-44 -scale-x-[1] text-primary animate-waves" />
 
 			<div className="absolute top-16 flex flex-col items-center justify-center">
 				<h1 className="sr-only">Thyseus</h1>
-				<Logo className="h-48 text-white" />
-				<p className="max-w-3xl text-center -mt-4">
+				<Logo className="h-32 tablet:h-48 text-white" />
+				<p className="max-w-[min(48rem,100vw)] text-center -mt-4">
 					A <span className="font-medium text-white">simple</span>,
 					<span className="font-medium text-white">powerful</span>,
 					and{' '}
 					<span className="font-medium text-white">ergonomic</span>{' '}
-					ECS library for game development -
+					ECS library -
 					<br />
 					built entirely in Typescript.
 				</p>

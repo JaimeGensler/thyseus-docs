@@ -41,7 +41,9 @@ export function MobileNav() {
 							{isDocsExpanded && <MobileDocsNav />}
 						</MobileNavSection>
 						<MobileNavSection>
-							<MobileNavButton href="/blog">Blog</MobileNavButton>
+							<MobileNavButton href="/blog/v0_12_release">
+								Blog
+							</MobileNavButton>
 						</MobileNavSection>
 					</ul>
 				</div>

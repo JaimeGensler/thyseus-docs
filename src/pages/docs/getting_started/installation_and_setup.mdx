@@ -110,14 +110,13 @@ Currently, the transformer is available for Rollup and Webpack.
     			rules: [
     				{
     					test: /\.ts$/,
+    					exclude: /node_modules/
     					use: [
     						{
     							loader: 'ts-loader',
-    							options: {},
     						},
     						{
     							loader: '@thyseus/transformer-webpack',
-    							options: {},
     						},
     					],
     				},

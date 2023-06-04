@@ -1,6 +1,5 @@
 import plugin from 'tailwindcss/plugin';
 import formPlugin from '@tailwindcss/forms';
-import typographyPlugin from '@tailwindcss/typography';
 import headlessUIPlugin from '@headlessui/tailwindcss';
 import type { Config } from 'tailwindcss';
 
@@ -32,21 +31,27 @@ export default {
 				500: 'hsl(208, 20%, 50%)',
 				400: 'hsl(208, 20%, 60%)',
 				300: 'hsl(208, 20%, 70%)',
-				200: 'hsl(208, 20%, 80%)',
+				200: 'hsl(208, 20%, 83%)',
 				100: 'hsl(208, 20%, 90%)',
 
 				DEFAULT: 'hsl(208, 20%, 80%)',
 			},
+
+			highlight: {
+				positive: 'hsl(142, 71%, 45%)',
+				neutral: 'hsl(217, 91%, 60%)',
+				warn: 'hsl(48, 96%, 53%)',
+				error: 'hsl(0, 84%, 60%)',
+			},
 		},
 		screens: {
-			tablet: '768px',
-			desktop: '1162px',
+			tablet: '780px',
+			desktop: '1192px',
 		},
 	},
 
 	plugins: [
 		formPlugin,
-		typographyPlugin,
 		headlessUIPlugin,
 		plugin(({ addVariant, addUtilities }) => {
 			addUtilities({

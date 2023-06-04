@@ -1,12 +1,7 @@
 import Link from 'next/link';
 import { Icon } from ':ui';
+import { Article } from './types';
 
-export type Article = {
-	path: string;
-	title: string;
-	date: string;
-	description: string;
-};
 export function FeaturedArticle({ title, path, date, description }: Article) {
 	return (
 		<section>

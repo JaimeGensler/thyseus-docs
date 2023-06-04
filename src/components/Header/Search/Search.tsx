@@ -1,33 +1,15 @@
-import { useState, useEffect } from 'react';
-import { Icon } from ':ui';
+import { useState } from 'react';
+import { ButtonOrLink, Icon, KeyboardKey } from ':ui';
 import { SearchDialog } from './SearchDialog';
 
-export function Search() {
+type Props = { className?: string };
+export function Search({ className }: Props) {
 	const [isOpen, setIsOpen] = useState(false);
-	const [isMounted, setIsMounted] = useState(false);
-
-	useEffect(() => {
-		setIsMounted(true);
-	}, []);
-
-	useEffect(() => {
-		function handleKeydown(event: KeyboardEvent) {
-			if (event.key === 'k' && (event.metaKey || event.ctrlKey)) {
-				event.preventDefault();
-				setIsOpen(x => !x);
-			}
-		}
-		window.addEventListener('keydown', handleKeydown);
-		return () => {
-			window.removeEventListener('keydown', handleKeydown);
-		};
-	}, []);
 
 	return (
-		<>
-			<button
-				type="button"
-				className="flex gap-2 items-center justify-between bg-gray-700 rounded-md py-1.5 text-sm px-2 text-gray-200 min-w-[14rem]"
+		<div className={className}>
+			<ButtonOrLink
+				className="group flex gap-2 items-center justify-between bg-gray-700 hocus:text-white hocus:bg-gray-600 transition-colors rounded-md py-1.5 text-sm px-2 min-w-[14rem]"
 				onClick={() => setIsOpen(true)}
 			>
 				<span className="flex items-center gap-1">
@@ -36,16 +18,18 @@ export function Search() {
 						Search docs...
 					</span>
 				</span>
-				{isMounted && (
-					<kbd className="text-xs bg-gray-900/80 py-0.5 px-1.5 outline outline-1 outline-gray-500 rounded-md">
-						{navigator.userAgent.includes('Macintosh')
-							? '⌘ K'
-							: 'Ctrl K'}
-					</kbd>
-				)}
-			</button>
+
+				<KeyboardKey
+					keyName="⌘ K"
+					alternateKeys={['/']}
+					onPressKey={e => {
+						e.preventDefault();
+						setIsOpen(x => !x);
+					}}
+				/>
+			</ButtonOrLink>
 
 			<SearchDialog isOpen={isOpen} setIsOpen={setIsOpen} />
-		</>
+		</div>
 	);
 }

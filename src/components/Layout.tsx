@@ -1,10 +1,9 @@
 import React from 'react';
 import Head from 'next/head';
-import { BlogLayout } from './BlogLayout/BlogLayout';
-import { DocsLayout } from './DocsLayout/DocsLayout';
-import { PageContextProvider } from 'components/PageContext';
+import { BlogLayout } from './BlogLayout';
+import { DocsLayout } from './DocsLayout';
+import { PageOptionsProvider, ThemeConfigProvider } from ':hooks';
 import type { NextraThemeLayoutProps } from 'nextra';
-import { ThemeConfigProvider } from './ThemeConfig';
 
 const getTitle = ({ title }: { title?: string }) =>
 	`${process.env.NODE_ENV === 'development' ? '[DEV] ' : ''}${
@@ -28,7 +27,7 @@ export function Layout({
 			: React.Fragment;
 
 	return (
-		<PageContextProvider value={pageOpts}>
+		<PageOptionsProvider value={pageOpts}>
 			<ThemeConfigProvider value={themeConfig}>
 				<Head>
 					<link rel="shortcut icon" href="/favicon-s.svg" />
@@ -36,6 +35,6 @@ export function Layout({
 				</Head>
 				<Wrapper>{children}</Wrapper>
 			</ThemeConfigProvider>
-		</PageContextProvider>
+		</PageOptionsProvider>
 	);
 }

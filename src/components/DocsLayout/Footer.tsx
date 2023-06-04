@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import clsx from 'clsx';
-import { usePageContext } from 'components/PageContext';
+import { usePageOptions } from ':hooks';
 import type { DocsCategory, DocsPage } from './getDocsPageMap';
 
 function flattenCategories(categories: DocsCategory[]): DocsPage[] {
@@ -12,7 +12,7 @@ function flattenCategories(categories: DocsCategory[]): DocsPage[] {
 
 type Props = { categories: DocsCategory[] };
 export function Footer({ categories }: Props) {
-	const { route } = usePageContext();
+	const { route } = usePageOptions();
 	const flatPageMap = flattenCategories(categories);
 	const currentIndex = flatPageMap.findIndex(page => page.route === route);
 	const prevPage = currentIndex === 0 ? null : flatPageMap[currentIndex - 1];

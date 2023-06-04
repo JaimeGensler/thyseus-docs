@@ -36,7 +36,7 @@ export function Systems() {
 				</span>
 			</span>
 			<span className="block">
-				<span style={{ color: 'var(--shiki-color-text)' }}>{'  '}</span>
+				<span style={{ color: 'var(--shiki-color-text)' }}>{'\t'}</span>
 				<span style={{ color: 'var(--shiki-token-keyword)' }}>for</span>
 				<span style={{ color: 'var(--shiki-color-text)' }}> (</span>
 				<span style={{ color: 'var(--shiki-token-keyword)' }}>
@@ -62,7 +62,7 @@ export function Systems() {
 			</span>
 			<span className="block">
 				<span style={{ color: 'var(--shiki-color-text)' }}>
-					{'    '}
+					{'\t\t'}
 				</span>
 				<span style={{ color: 'var(--shiki-token-constant)' }}>
 					pos
@@ -77,7 +77,7 @@ export function Systems() {
 			</span>
 			<span className="block">
 				<span style={{ color: 'var(--shiki-color-text)' }}>
-					{'    '}
+					{'\t\t'}
 				</span>
 				<span style={{ color: 'var(--shiki-token-constant)' }}>
 					pos
@@ -92,7 +92,7 @@ export function Systems() {
 			</span>
 			<span className="block">
 				<span style={{ color: 'var(--shiki-color-text)' }}>
-					{'    '}
+					{'\t\t'}
 				</span>
 				<span style={{ color: 'var(--shiki-token-constant)' }}>
 					pos
@@ -107,7 +107,7 @@ export function Systems() {
 			</span>
 			<span className="block">
 				<span style={{ color: 'var(--shiki-color-text)' }}>
-					{'  }'}
+					{'\t}'}
 				</span>
 			</span>
 			<span className="block">

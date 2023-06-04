@@ -1,8 +1,8 @@
 {
 	"navigation": [
-		{ "path": "worlds", "title": "Worlds" },
 		{ "path": "entities", "title": "Entities" },
 		{ "path": "components", "title": "Components" },
-		{ "path": "systems", "title": "Systems" }
+		{ "path": "systems", "title": "Systems" },
+		{ "path": "worlds", "title": "Worlds" }
 	]
 }

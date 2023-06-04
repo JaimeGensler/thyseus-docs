@@ -18,7 +18,7 @@ export function Components() {
 			</span>
 			<span className="block">
 				<span style={{ color: 'var(--shiki-color-text)' }}>
-					{'  '}@
+					{'\t'}@
 				</span>
 				<span style={{ color: 'var(--shiki-token-constant)' }}>
 					struct
@@ -37,7 +37,7 @@ export function Components() {
 			</span>
 			<span className="block">
 				<span style={{ color: 'var(--shiki-color-text)' }}>
-					{'  '}@
+					{'\t'}@
 				</span>
 				<span style={{ color: 'var(--shiki-token-constant)' }}>
 					struct
@@ -56,7 +56,7 @@ export function Components() {
 			</span>
 			<span className="block">
 				<span style={{ color: 'var(--shiki-color-text)' }}>
-					{'  '}@
+					{'\t'}@
 				</span>
 				<span style={{ color: 'var(--shiki-token-constant)' }}>
 					struct

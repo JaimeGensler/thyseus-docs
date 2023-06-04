@@ -7,14 +7,14 @@ import { Callout } from ':ui';
 # Memory API
 
 <Callout type="error">
-	Working directly with the `memory` API comes with significant risks.
+	Working directly with the `Memory` API comes with significant risks.
 	Incorrect usage of the API can lead to corruption of any or all
 	Thyseus-specific data in an application. Proceed with extreme caution.
 </Callout>
 
-Thyseus uses a custom memory allocator to gain fine-grain control over memory
+Thyseus uses a custom memory allocator to have fine-grain control over memory
 layout in applications. It allocates an ArrayBuffer when a world is built and
-partitions it as needed with functions like `memory.alloc()`, `memory.free()`,
+partitions it as needed with functions like `Memory.alloc()`, `Memory.free()`,
 and more. Reading and writing data in this memory is handled with pointers -
 unsigned integer offsets, which can be used to index into views over the buffer.
 
@@ -32,12 +32,13 @@ could change in a patch or minor release, without documentation.
 ## Allocating
 
 After memory has been initialized, memory can be allocated with
-`memory.alloc(size: number): Pointer`.
+`Memory.alloc(size: number): Pointer`.
 
 ```ts
+import { Memory } from 'thyseus';
 // Requests 8 bytes for allocations.
-// Returns a pointer - an integer offet into memory.
-const myPointer = memory.alloc(8);
+// Returns a pointer - an unsigned integer offet into memory.
+const myPointer = Memory.alloc(8);
 console.log(typeof myPointer); // 'number'
 ```
 
@@ -52,33 +53,31 @@ error will be thrown.
 
 ### Reallocating
 
-For dynamically sized types, you may need to _reallocate_ a previously allocated
-block with a new size. This can be done with the provided `realloc` and
+For dynamically sized types, you may need to _reallocate_ a previously
+allocation with a new size. This can be done with the provided `realloc()` and
 `reallocAt()` functions.
 
 ```ts
-import { memory } from 'thyseus';
+import { Memory } from 'thyseus';
 
 // Getting our initial pointer
-const myPointer = memory.alloc(8);
+const myPointer = Memory.alloc(8);
 
 // Reallocating - our data will be preserved
-const newPointer = memory.realloc(myPointer, 16);
+const newPointer = Memory.realloc(myPointer, 16);
 // NOTE: myPointer is no longer valid for use! Only use newPointer now.
 ```
-
-After a pointer has been reallocated, its previous value is invalid and must not
-be used.
 
 <Callout type="note">
 	As an optimization, `realloc()` will perform a zero-copy in-place grow if
 	possible. If it cannot, it will allocate, copy, and free.
 </Callout>
 
-Bear in mind that `realloc()` cannot update pointers held locally in other
-threads. For example:
+After a pointer has been reallocated, its previous value is invalid and must not
+be used. Bear in mind that `realloc()` cannot update pointers held locally in
+other threads. For example:
 
-```ts
+```ts {10-13}
 class MyDataStructure {
 	pointer: number;
 	size: number;
@@ -89,38 +88,32 @@ class MyDataStructure {
 	}
 
 	grow() {
-		this.pointer = memory.realloc(this.pointer, this.size * 2);
+		this.pointer = Memory.realloc(this.pointer, this.size * 2);
 		this.size *= 2;
 	}
-
-	doSomethingWithPointer() {
-		// ...
-	}
 }
-
-const myInstance = new MyDataStructure(memory.alloc(8), 8);
 ```
 
-This looks okay - but imagine that `MyDataStructure` is constructed in another
-thread, sharing the same pointer in that thread:
+This _appears_ okay - but imagine that `MyDataStructure` is constructed in
+another thread, sharing the same pointer in that thread:
 
 ```ts
 // Main Thread
 myInstance.grow();
 
 // ...some time later, in a different thread
-myInstance.doSomethingWithPointer();
+Memory.views.u8[myInstance.pointer];
 ```
 
 In the above case, the `pointer` on the class will be updated on the main
-thread, but **not** in the worker thread. When `doSomethingWithPointer()` is
-called in the worker thread, we will be using a pointer that has been freed!
+thread, but **not** in the worker thread. When we try to access the pointer in a
+worker thread, we will be using a pointer that has been freed!
 
 To resolve this, the primary pointer that is shared between both threads
 **cannot change**. That pointer must point to _another_ pointer, which _can_ be
 resized.
 
-```ts
+```ts {9-18}
 class MySafeDataStructure {
 	pointer: number;
 
@@ -130,22 +123,16 @@ class MySafeDataStructure {
 	}
 
 	grow() {
-		const { u32 } = memory.views;
+		const { u32 } = Memory.views;
 		const size = u32[(this.pointer + 4) >> 2];
 		// Realloc pointer at our pointer
-		u32[this.pointer >> 2] = memory.realloc(
+		u32[this.pointer >> 2] = Memory.realloc(
 			u32[this.pointer >> 2],
 			size * 2,
 		);
 		u32[(this.pointer + 4) >> 2] = size * 2;
 	}
-
-	doSomethingWithPointer() {
-		// ...
-	}
 }
-
-const myInstance = new MySafeDataStructure(memory.alloc(8));
 ```
 
 In the vast majority of cases, `realloc()` will be used on pointers held in the
@@ -155,8 +142,8 @@ value at that pointer as a pointer itself.
 
 ```ts
 grow() {
-	memory.reallocAt(this.pointer >> 2, size * 2);
-	memory.views.u32[(this.pointer + 4) >> 2] = size * 2;
+	Memory.reallocAt(this.pointer >> 2, size * 2);
+	Memory.views.u32[(this.pointer + 4) >> 2] = size * 2;
 }
 ```
 
@@ -167,12 +154,12 @@ Now we're safely reallocating!
 <Callout type="error">
 	Memory that you have not claimed for yourself belongs to the allocator. The
 	allocator may use memory it owns for internal purposes; writing to values
-	the allocator owns will likely result in infinite loops, complete corruption
-	of data in the buffer, or both.
+	the allocator owns will likely result in infinite loops and complete
+	corruption of data in the buffer.
 </Callout>
 
 Now that you own a section of memory, you may read and write values from it. The
-`memory.views` object exposes a view of every type over the entire buffer:
+`Memory.views` object exposes a view of every type over the entire buffer:
 
 ```ts
 type MemoryViews = {
@@ -191,59 +178,58 @@ type MemoryViews = {
 };
 ```
 
-The `memory.views` object is guaranteed to be referentially stable for its
-entire lifetime, but its members are currently not.
+The `Memory.views` object is guaranteed to be referentially stable for its
+entire lifetime, **but its members are currently not**.
 
 Because a pointer is a _byte_ offset in memory and typed array access uses
-_indices_, you'll need to do a little pointer manipulation when accessing typed
+_indexes_, you'll need to do a little pointer manipulation when accessing typed
 arrays with value sizes larger than a single byte. Fortunately, this is as
 simple as shifting bits:
 
 ```ts
-import { memory } from 'thyseus';
+import { Memory } from 'thyseus';
 
-const myPointer = memory.alloc(8);
-memory.views.u8[myPointer]; // No shifting needed for single-byte values!
-memory.views.u16[myPointer >> 1]; // Shift right once
-memory.views.u32[myPointer >> 2]; // Shift right twice
-memory.views.u64[myPointer >> 3]; // Shift right thrice
+const myPointer = Memory.alloc(8);
+Memory.views.u8[myPointer]; // No need to shift for single byte vals!
+Memory.views.u16[myPointer >> 1]; // Shift right once
+Memory.views.u32[myPointer >> 2]; // Shift right twice
+Memory.views.u64[myPointer >> 3]; // Shift right thrice
 ```
 
-To access an offset of your pointer that you own, you can do a little pointer
-arithmetic!
+To access an offset of your pointer that you own, you can do pointer arithmetic.
 
 ```ts
-import { memory } from 'thyseus';
+import { Memory } from 'thyseus';
 
-const pointer = memory.alloc(8);
-const firstU32 = memory.views.u32[pointer >> 2];
-const secondU32 = memory.views.u32[(pointer + 4) >> 2];
+const pointer = Memory.alloc(8);
+const firstU32 = Memory.views.u32[pointer >> 2];
+const secondU32 = Memory.views.u32[(pointer + 4) >> 2];
 ```
 
-Remember that it is **your responsibility** to ensure that you are using
-pointers correctly and only accessing data you own. The allocator does not and
-cannot do bounds checks on your memory access, so you will not be stopped from
-writing to memory regions outside of your allocated range.
+It is **your responsibility** to ensure that you are using pointers correctly
+and only accessing data you own. The allocator does not and cannot do bounds
+checks on your memory access, so you will not be stopped from writing to memory
+regions outside of your allocated range.
 
 ## Freeing
 
 When you are done with your allocated section of memory, you must call `free()`.
-**The allocator does not garbage collect - you are responsible for freeing
-memory you no longer need.** `free()` accepts a pointer, and allows that section
-of memory to be allocated again.
+**The allocator does not automatically garbage collect - you are responsible for
+freeing memory you no longer need.** `free()` accepts a pointer, and allows that
+section of memory to be allocated again.
 
 ```ts
 import { memory } from 'thyseus';
 
-const myPointer = memory.alloc(8);
+const myPointer = Memory.alloc(8);
 // ... some time later, when you're done with memory
-memory.free(myPointer);
+Memory.free(myPointer);
 // You may not use myPointer any more!
 ```
 
 ## Utilities
 
-The `memory` object also exposes a few additional functions for convenience.
+The `Memory` object also exposes a few additional functions for convenience.
 
 -   `copy(from: Pointer, length: number, to: Pointer): void`, which accepts a
     pointer to start from, a length (in bytes) to copy, and the destination to

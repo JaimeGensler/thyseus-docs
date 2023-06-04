@@ -52,8 +52,8 @@ function anotherSystem(myResource: Res<MyResource>) {
 }
 ```
 
-**Like component data, resources are readonly by default.**. If you'd like to
-mutate a resource, you can simply wrap it in `Mut<>`:
+**Like components, resources are readonly by default**. If you'd like to mutate
+a resource, you can simply wrap it in `Mut`:
 
 ```ts
 class MyResource {}
@@ -90,8 +90,8 @@ class Keyboard {
 Hypothetically, there's no reason the state of the keyboard shouldn't be read
 from any thread. However, we need to set up event listeners to capture
 `'keydown'` and `'keyup'` events, which _does_ need to happen only on the main
-thread. Constructors are called on both threads, so that's not an option,
-either - this is the perfect use for an `initialize` method!
+thread. Constructors must be callable from all threads, so that's not an
+option - this is the perfect use for the `initialize` method!
 
 ```ts
 import { struct, type World } from 'thyseus';
@@ -128,4 +128,4 @@ initializing when that world is being built. If your setup is async, the
 before continuing to build the world.
 
 Resources are not required to have an `initialize` method, **but it will be
-called if it exists** - you cannot use this method name for something else!
+called if it exists** - you cannot use this method name for something else.

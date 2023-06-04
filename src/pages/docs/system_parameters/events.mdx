@@ -12,7 +12,7 @@ instances of `Struct`s, and live in a queue of other events of the same type.
 New events can be pushed to the queue with `EventWriter<T>`, and events in the
 queue can be read with `EventReader<T>`.
 
-Events have no set lifetime - they will persist until the queue is manually
+**Events have no set lifetime** - they will persist until the queue is manually
 cleared. Both readers and writers can call the `clear()` method to queue a
 command that will empty the event queue the next time commands are processed.
 This only clears events of the queue's event type, and not queues for other
@@ -54,8 +54,8 @@ export function readLevelUpEvents(
 ```
 
 <Callout type="warn">
-	Beware! The **same object** is yielded for every iteration of the `for...of`
-	loop, with different backing data.
+	Like queries, Thyseus reuses the same object with different backing data
+	when iterating events.
 </Callout>
 
 ## `EventWriter`
@@ -63,12 +63,12 @@ export function readLevelUpEvents(
 `EventWriter`s are responsible for adding events to the queue. There are three
 provided methods of doing so:
 
-1. `createDefault(): void` adds an element to the queue with the default data
-   for that struct.
-2. `create(): T` adds an element to the queue and returns a handle to that
-   element for you to mutate.
-3. `createFrom(instance: T): void` copies the data from passed instance of the
-   struct into the queue.
+-   `createDefault(): void` adds an element to the queue with the default data
+    for that struct.
+-   `create(): T` adds an element to the queue and returns a handle to that
+    element for you to mutate.
+-   `createFrom(instance: T): void` copies the data from passed instance of the
+    struct into the queue.
 
 `EventWriter`s also have a `clearImmediate()` method that immediately clears all
 events in the queue.
@@ -95,12 +95,10 @@ export function writeLevelUpEvents(levelUpEvents: EventWriter<LevelUpEvent>) {
 }
 ```
 
-`EventWriter` extends `EventReader`, and so also has all of functionality of
-readers.
+`EventWriter` also inherits all the functionality of `EventReader`!
 
 ## Parallelism
 
-As one may expect, `EventWriter`s require exclusive access to queues, and so
-intersect with readers and writers of the same queue. `EventReader`s do _not_
-require exclusive access, and so can run in parallel with other readers of the
-same queue.
+`EventWriter`s require exclusive access to their queue, and so intersect with
+readers and writers of the same type. `EventReader`s do _not_ require exclusive
+access, and so can run in parallel with other readers of the same type.

@@ -4,177 +4,138 @@ title: Systems
 
 # Systems
 
-Systems (the **S** of ECS) hold all of the responsibility for transforming your
-data. Systems are functions that accept only "system parameters". They may
-accept zero, one, or many parameters, or even multiple of the same type of
-parameter - so long as it accepts only valid system parameters, it's a system.
-You never have to worry about _how_ data gets to your systems - it just does!
+Systems are where the functionality of an ECS application lives and are the
+fundamental way you read and write data. Most often, systems are used to query
+for entities with particular components, but they can also be used to spawn
+entities, handle events, draw to canvases, serialize data & write it to the file
+system, or anything else you might need them to do.
 
-Systems are the fundamental way you read and write ECS data, so they have many
-different uses. Most often, they are used to query for entities with particular
-components, but they can also be used to initialize your world, spawn entities,
-draw to canvases, serialize data & write it to the file system, or anything else
-you might need them to do.
+## Defining Systems
 
-## Defining a system
+Systems being functionality, it's only natural for them to be `function`s! A
+function is a system if it accepts only "system parameters". They may accept
+zero, one, or many parameters - even multiple of the same type of parameter! So
+long as every parameter is a system parameter, it's a system.
 
-Let's define a simple system that just spawns an entity and adds a component to
-it:
+We've already seen a couple simple systems - let's start by revisiting those.
+
+### Basic Commands System
+
+In the entities section, we saw a system that used the `Commands` object.
+`Commands` is one of the built-in system parameters, and is responsible for
+spawning entities. Now that we know about components, let's try spawning an
+entity _and_ adding a component to it:
 
 ```ts
-import { MySuperCoolComponent } from './somewhere';
+import { Health, Transform } from './components';
 
 export function spawnerSystem(commands: Commands) {
-	commands.spawn().addType(MySuperCoolComponent);
+	commands.spawn().addType(Health).addType(Transform);
 }
 ```
 
-When a world executes this systems, it will be called with that world's
-[`Commands`](/docs/systems/commands) object. We can do whatever we need with
-commands in this system!
+When this system runs, it will be called with a `Commands` object, which we can
+do whatever we need with - check out the
+[`Commands` page](/docs/system_parameters/commands) to see what else you can do
+with commands!
 
-There's only so much we can do with `Commands`, so let's try something a little
-more complex:
+### Basic Queries System
+
+Next, let's look into queries more - they're probably the most used parameter!
 
 ```ts
 import { struct } from 'thyseus';
-@struct
-class Vec2 {
-	@struct.f64 declare x: number;
-	@struct.f64 declare y: number;
-}
-class Position extends Vec2 {}
-class Velocity extends Vec2 {}
+import { Position, Velocity } from './components';
 
-export function moveSystem(query: Query<[Mut<Position>, Velocity]>) {
+export function moveSystem(query: Query<[Position, Velocity]>) {
 	for (const [pos, vel] of query) {
-		pos.x += vel.x;
-		pos.y += vel.y;
+		console.log(pos, vel);
 	}
 }
 ```
 
-This system has a bit more going on, so let's pick it apart.
+There's a lot more going on here, so let's work through it piece by piece.
 
-We see that this system accepts one argument - a
-[`Query`](/docs/systems/queries). This query looks for entities that have both a
-`Position` and a `Velocity` component. If you inspect the types of the `pos` and
-`vel` variables, you'll see that `pos` is a `Position` instance, but `vel` is a
-_readonly_ instance. **By default, component data in Thyseus is readonly;**
-systems that mutate data must specify that they will. We can do that by wrapping
-the component in `Mut`.
+```ts {1}
+export function moveSystem(query: Query<[Position, Velocity]>) {
+	// ...
+}
+```
 
-In the function body, we iterate over the query; or, in other words, we iterate
-over every entity that has both the `Position` and `Velocity` components. For
-each entity, we add the velocity's `x` and `y` to the position's.
+First, we're defining a system that accepts one argument - a `Query`. This query
+will look for entities that have both a `Position` and a `Velocity` component -
+every entity that has _at least_ both of these components will match this query.
+
+```ts {2-4}
+export function moveSystem(query: Query<[Mut<Position>, Velocity]>) {
+	for (const [pos, vel] of query) {
+		console.log(pos, vel);
+	}
+}
+```
+
+In the function body, we're iterating over the query - this means we're getting
+the `Position` and `Velocity` components for every entity the query matches. For
+each entity, we're simply logging the position and velocity. In future examples,
+we'll do a lot more!
+
+### Other System Parameters
 
 Queries and Commands are just two of the system parameters Thyseus provides out
 of the box; your systems can get much more complex, using multiple queries,
 accessing resources, reading & writing events, or accessing the world itself.
-The next sections will cover all of the system parameters in detail. If you need
-system parameters not provided by Thyseus, you can also
-[create your own system parameters](/docs/advanced_patterns/custom_system_parameters).
+Later sections will cover all of the system parameters in depth - and if you
+need system parameters not provided by Thyseus, you can even
+[create your own](/docs/advanced_patterns/custom_system_parameters).
 
-## System Dependencies
+## System Transformation
 
-By default, Thyseus makes no guarantees about the order in which systems will be
-executed - it may change from execution to execution, or when building the same
-world again If you'd like to require an explicit order between systems, Thyseus
-provides a dependency API.
+The transformer takes care of making sure that systems receive the arguments
+they need. It comes with a couple usage caveats.
 
-```ts
-import { World } from 'thyseus';
-function systemA() {}
-function systemB() {}
-function systemC() {}
-function systemD() {}
-function systemE() {}
-
-const myWorld = await World.new()
-	.addSystem(systemA.before(systemB))
-	.addSystem(systemB.after(systemC))
-	.addSystem(systemE.afterAll())
-	.addSystem(systemD.beforeAll());
-```
-
-Dependencies are cleared immediately after being read by world builders, and so
-must be set for every world a system is registered in - this is why it is
-recommended to declare dependencies in-line or in the same module a world
-registers them in.
-
-**Both explicit (`before`, `after`) and implicit (`beforeAll`, `afterAll`)
-dependencies apply only to systems that intersect.** For example, if systems `A`
-and `B` are disjoint, then `A before B` will have no effect. Similarly,
-`A beforeAll` _will **not**_ guarantee that `A` runs before `B` (but will
-guarantee that `A` runs before any other systems that `A` intersects with).
-
-Also note that explicit dependencies take precedence over implicit dependencies.
-Given intersecting `A` and `B`, `(B beforeAll), (A before B)` will guarantee
-that A runs before B. If no explicit resolution is provided, implicit
-dependencies are evaluated _in the order they are passed in_. For example, given
-`(A beforeAll), (B beforeAll)`, `A` will be guaranteed to execute before `B`.
-Given `(A afterAll), (B afterAll)`, `A` will be guaranteed to execute _after_
-`B`.
-
-Lastly, contradictory dependencies - such as `A after A` or
-`(A before B), (B before A)` - will cause an error to be thrown when the world
-is built.
-
-### Transformer notes
-
-The transformer currently has a couple usage caveats.
-
-It only detects **function declarations** and **function expressions in variable
-initialization**. For example:
+-   **Only function declarations and functions in variable initialization are
+    transformed.** Function expressions passed inline to other functions won't
+    be transformed, but you can always provide parameters manually.
 
 ```ts
-// Function declaration
-function systemA(/* system parameters */) {}
+// This works great!
+function systemA(world: World) {}
 
-// Expression in a variable assignment
-const systemB = function systemBInner(/* system parameters */) {};
+// This too!
+const systemB = function systemBInner(world: World) {};
 
-// And of course we wouldn't forget about arrow functions
-const systemC = (/* system parameters */) => {};
+// And of course we wouldn't forget about arrow functions!
+const systemC = (world: World) => {};
 ```
 
-Function expressions that are passed to other functions (e.g., inlining a
-function in `addSystems()`) will _not_ be transformed! Remember that systems are
-just functions, so you can write them however you like - if it is not one of the
-above ways, see below how to handle writing systems without the transformer.
+-   **Type aliases (including import aliases) are not permitted;** simple
+    aliases (`type MyQuery = Query<...>`), or "namespaced" types
+    (`Thyseus.Commands`) will not be transformed. Support for this is planned
+    for a future update.
+-   **Functions with rest parameters will not be transformed,** even if the
+    parameters are typed as a tuple containing only valid system parameters.
+-   **Import classes, not just types.** When using class types, the transformer
+    assumes the actual class is in scope; if you get a reference error, it's
+    probably this.
+-   **Systems can't be generic.** Of course, you can still create generic "base"
+    functions and call them in systems with your non-generic data.
+-   **Functions that accept only system parameters will have a `parameters`
+    property added, even if they aren't used as systems.** This is more-or-less
+    harmless; you can ignore or `//thyseus-ignore` it - up to you!
 
-**Type aliases are not permitted**. Due to some technical limitations, we check
-the _text_ of types rather than the types themselves, and so type names must be
-an exact match; creating type aliases (`type MyQuery = Query<...>`), or
-"namespacing" types (`import * as Thyseus from 'thyseus'`) **will not work**.
-This will be remedied in a future update.
+## Systems Without Transformation
 
-**Functions with rest parameters will not be transformed**, even if the
-parameters are typed as a tuple containing only valid system parameters.
-
-**Types referenced in parameters may not be type-only imports.** The transformer
-assumes the actual class is in scope, not just the type, so you'll get a
-reference error if you use type-only imports!
-
-Lastly, **systems cannot be generic.** Systems act on specific data, and can't
-know what types to be generic over. Of course, you may create generic "base"
-functions and create systems that simply call those functions with their
-non-generic data.
-
-## Systems without the transformer
-
-If you're using plain Javascript, or are building third-party libraries, or
-simply do not wish to use the transformer plugin, then you will need to provide
-system parameter information yourself. Thyseus uses this information to
-determine what data your systems want from a world, as well as how it's
-accessed.
+If you're using plain Javascript, are building third-party libraries, or simply
+do not wish to use the transformer plugin, then you will need to provide system
+parameter information yourself. Thyseus uses this information to determine what
+data your systems want from a world, as well as how it's accessed.
 
 Fortunately, writing systems without the transformer only involves one
-additional step - adding a `parameters` property to the system. Let's see what
+additional step - adding a `parameters` property to the function. Here's what
 the above examples would look like without the transformer:
 
 ```ts
-import { CommandsDescriptor } from 'thyseus/descriptors';
+import { CommandsDescriptor, QueryDescriptor, Mut } from 'thyseus/descriptors';
 
 export function spawnerSystem(commands: Commands) {
 	commands.spawn().addType(Position).addType(Velocity);
@@ -187,5 +148,5 @@ export function moveSystem(query: Query<[Mut<Position>, Velocity]>) {
 		pos.y += vel.y;
 	}
 }
-moveSystem.parameters = [Query([Mut(Position), Velocity])];
+moveSystem.parameters = [QueryDescriptor([Mut(Position), Velocity])];
 ```

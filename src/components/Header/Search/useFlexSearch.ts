@@ -1,10 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { Document } from 'flexsearch';
 
 // Adapted from https://github.com/shuding/nextra/blob/main/packages/nextra-theme-docs/src/components/flexsearch.tsx
 
-type SearchResult = any;
 type SectionIndex = Document<
 	{
 		id: string;
@@ -24,20 +23,15 @@ type PageIndex = Document<
 	},
 	['title']
 >;
-type Result = {
+export type SearchResult = {
 	_page_rk: number;
 	_section_rk: number;
 	route: string;
 	title: string;
 	prefix: string;
+	context: string;
+	pageTitle: string;
 	match: string;
-	content: string;
-};
-type NextraData = {
-	[route: string]: {
-		title: string;
-		data: Record<string, string>;
-	};
 };
 
 const DEFAULT_LOCALE = 'en-us';
@@ -52,19 +46,12 @@ const loadIndexes = (basePath: string, locale: string): Promise<void> => {
 	if (loadIndexesPromises.has(key)) {
 		return loadIndexesPromises.get(key)!;
 	}
-	const promise = loadIndexesImpl(basePath, locale);
+	const promise = loadIndexesImpl(locale);
 	loadIndexesPromises.set(key, promise);
 	return promise;
 };
-const loadIndexesImpl = async (
-	basePath: string,
-	locale: string,
-): Promise<void> => {
-	const response = await fetch(
-		`${basePath}/_next/static/chunks/nextra-data-${locale}.json`,
-	);
-	const data = (await response.json()) as NextraData;
-	console.log(data);
+const loadIndexesImpl = async (locale: string): Promise<void> => {
+	const { default: data } = (await import('./data.json')) as any;
 
 	const pageIndex: PageIndex = new Document({
 		cache: 100,
@@ -145,33 +132,21 @@ const loadIndexesImpl = async (
 
 export function useFlexSearch() {
 	const { locale = DEFAULT_LOCALE, basePath } = useRouter();
-	console.log(basePath);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState(false);
 	const [results, setResults] = useState<SearchResult[]>([]);
 
-	useEffect(() => {
-		// Preload
-		let isMounted = true;
-		(async () => {
-			if (!indexes[locale]) {
-				setLoading(true);
-				try {
-					await loadIndexes(basePath, locale);
-				} catch (e) {
-					if (isMounted) {
-						setError(true);
-					}
-				}
-				if (isMounted) {
-					setLoading(false);
-				}
+	async function load() {
+		if (!indexes[locale]) {
+			setLoading(true);
+			try {
+				await loadIndexes(basePath, locale);
+			} catch (e) {
+				setError(true);
 			}
-		})();
-		return () => {
-			isMounted = false;
-		};
-	}, [locale, basePath]);
+			setLoading(false);
+		}
+	}
 
 	const handleChange = async (value: string) => {
 		if (loading) {
@@ -187,7 +162,7 @@ export function useFlexSearch() {
 			setLoading(false);
 		}
 		if (!value) {
-			return;
+			setResults([]);
 		}
 
 		const [pageIndex, sectionIndex] = indexes[locale];
@@ -198,7 +173,7 @@ export function useFlexSearch() {
 				suggest: true,
 			})[0]?.result || [];
 
-		const results: Result[] = [];
+		const results: SearchResult[] = [];
 		const pageTitleMatches: Record<number, number> = {};
 
 		for (let i = 0; i < pageResults.length; i++) {
@@ -232,32 +207,46 @@ export function useFlexSearch() {
 					route: url,
 					prefix: isFirstItemOfPage ? result.doc.title : '',
 					title,
+					pageTitle: result.doc.title,
 					match: value,
-					content,
+					context: content,
 				});
 				isFirstItemOfPage = false;
 			}
 		}
 
 		setResults(
-			results.sort((a, b) => {
-				// Sort by number of matches in the title.
-				if (a._page_rk === b._page_rk) {
-					return a._section_rk - b._section_rk;
-				}
-				if (
-					pageTitleMatches[a._page_rk] !==
-					pageTitleMatches[b._page_rk]
-				) {
-					return (
-						pageTitleMatches[b._page_rk] -
-						pageTitleMatches[a._page_rk]
-					);
-				}
-				return a._page_rk - b._page_rk;
-			}),
+			results
+				.sort((a, b) => {
+					// Sort by number of matches in the title.
+					if (a._page_rk === b._page_rk) {
+						return a._section_rk - b._section_rk;
+					}
+					if (
+						pageTitleMatches[a._page_rk] !==
+						pageTitleMatches[b._page_rk]
+					) {
+						return (
+							pageTitleMatches[b._page_rk] -
+							pageTitleMatches[a._page_rk]
+						);
+					}
+					return a._page_rk - b._page_rk;
+				})
+				.slice(0, 16),
 		);
 	};
 
-	return { handleChange, loading, error, results };
+	function clearResults() {
+		setResults([]);
+	}
+
+	return {
+		handleChange,
+		load,
+		clearResults,
+		loading,
+		error,
+		results,
+	};
 }

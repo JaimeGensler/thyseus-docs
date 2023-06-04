@@ -26,17 +26,15 @@ function mySystem(a1: SystemRes<A>, a2: SystemRes<A>) {
 }
 ```
 
-If using multithreading, system resources - like normal resources - will be
-considered callable from any thread if decorated by `@struct`, and will be bound
-to the main thread otherwise. For structs, their values will be consistent
-across threads, making them a good replacement for mutable local closures, if
-necessary.
+Like world resources, system resources are considered accessible from any thread
+if decorated by `@struct` and bound to the main thread otherwise. `@struct`
+system resources will have consistent values across threads, making them a good
+replacement for mutable local closures.
 
 System resources are scoped to the system that uses them; if a system exists in
-multiple schedules, or multiple times in the same schedule, it will _always_
-receive the same system resource! If your would like your system to receive
-different system resources, you'll want to use the exported `cloneSystem`
-function.
+multiple schedules, it will _always_ receive the same system resource! If your
+system needs to receive different objects in different schedules, you can
+_clone_ that system and use the clone in one of the schedules.
 
 Apart from their scope, system resources function identically to normal
 resources, `initialize` and all. In fact, the same class could be used both as a

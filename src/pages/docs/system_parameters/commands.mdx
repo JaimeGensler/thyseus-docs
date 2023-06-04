@@ -6,27 +6,124 @@ import { Callout } from ':ui';
 
 # Commands
 
-Commands are used to spawn & despawn entities, add components to & remove
-components from entities, and to clear event queues. Commands are _not_
-processed immediately - instead, they are added to a queue, which is processed
-in a system called `applyCommands`. The effects of commands are not observeable
-until _after_ commands are processed!
+The `Commands` object can be used to spawn & despawn entities, add components to
+& remove components from entities, and clear event queues. Individual commands
+aren't processed immediately - instead, each command is added to a queue. The
+entire queue of commands is later processed in a system called `applyCommands` -
+the effects of commands are not observeable until _after_ this system runs.
 
-By default, Thyseus adds `applyCommands` to the end of `CoreSchedule.Startup`
-and `CoreSchedule.Main`; however, you can import `applyCommands` and add it to
-whatever schedule you need, as many times as you need.
+Let's look at how to use `Commands`!
 
-<Callout type="tip">
-	`applyCommands` requires access to the World, and so will create a hard sync
-	point for multithreading. Try to avoid adding it more than necessary!
-</Callout>
+## Setup
 
-Let's take a quick look at what we can do with `Commands`!
+Thyseus is built for a wide variety of use cases - this makes it versatile, but
+it also means it doesn't make assumptions about how your app will or should
+work. As a result, **you must add the `applyCommands` system yourself**. You can
+`import applyCommands` and add it to whatever schedule you need (and as many
+times as you need with `cloneSystem`).
+
+Starting out, it's usually a good idea to add it to the end of the
+`DefaultSchedule`.
+
+```ts
+import { World, applyCommands, run } from 'thyseus';
+
+const world = await World.new()
+	.addSystems(
+		// ... All your systems here
+		run(applyCommands).last(),
+	)
+	.build();
+```
 
 ## Spawning Entities
+
+The most common use of commands is spawning entities.
 
 ```ts
 function spawnEntities(commands: Commands) {
 	const entityCommands = commands.spawn();
 }
 ```
+
+The `spawn()` method returns an `EntityCommands` object that can be used to
+insert additional commands for that entity - like adding or removing components.
+
+If you need to "reobtain" the `EntityCommands` for an entity, you can use
+`getEntityById()`:
+
+```ts
+function getHandle(commands: Commands, heldEntity: Res<HeldEntity>) {
+	const entityCommands = commands.getEntityById(heldEntity.id);
+}
+```
+
+## Adding/Removing Components
+
+Commands are also how we add & remove components on entities.
+
+To add components, we can use the `addType()` method. `addType()` allows you to
+add components _by type_ - when commands are applied, that component will
+receive the default values for the component. Adding by type is especially
+useful for ZSTs!
+
+```ts
+import { IsEnemy } from './components';
+
+function spawnEntities(commands: Commands) {
+	for (let i = 0; i < 10; i++) {
+		commands.spawn().addType(IsEnemy);
+	}
+}
+```
+
+Sometimes you'll want to have some initial data for components. To do this, we
+can use `add()`.
+
+```ts
+import { Position } from './components';
+
+function spawnEntities(commands: Commands, pos: SystemRes<Position>) {
+	for (let i = 0; i < 10; i++) {
+		commands.spawn().add(pos.set(1, 2, 3));
+	}
+}
+```
+
+`add()` _copies_ the data for the passed component.
+
+When an entity should no longer possess a component, you can use `remove()`:
+
+{/* prettier-ignore */}
+```ts
+function removePoison(
+	commands: Commands,
+	curedEvents: EventReader<Cured>
+) {
+	for (const cured of curedEvents) {
+		commands.getEntityById(cured.entityId).remove(Poisoned);
+	}
+}
+```
+
+## Despawning Entities
+
+When you're done with an entity, you can use the `despawn()` method:
+
+```ts
+function despawnEntities(
+	entities: Query<Entity, With<IsDead>>,
+	commands: Commands,
+) {
+	for (const entity of entities) {
+		commands.despawn(entity.id);
+	}
+}
+```
+
+## Parallelism
+
+`Commands` is designed to be **safely accessible in parallel** - systems on any
+thread can safely push commands to the queue at the same time as other systems.
+The `applyCommands` system requires access to the `World`, and as such creates a
+hard sync point.

@@ -2,9 +2,9 @@ import React from 'react';
 import clsx from 'clsx';
 
 const styleLookup = {
-	note: 'bg-[#3b82f6]/20 border-[#3b82f6]',
-	warn: 'bg-[#facc15]/20 border-[#facc15]',
-	error: 'bg-[#ef4444]/20 border-[#ef4444]',
+	note: 'bg-highlight-neutral/20 border-highlight-neutral',
+	warn: 'bg-highlight-warn/20 border-highlight-warn',
+	error: 'bg-highlight-error/20 border-highlight-error',
 	tip: 'bg-accent/20 border-accent',
 };
 const emojiLookup = {

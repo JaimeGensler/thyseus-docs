@@ -6,9 +6,8 @@ import { DocsCategory, DocsPage } from './getDocsPageMap';
 type SideNavigationProps = { categories: DocsCategory[] };
 export function SideNavigation({ categories }: SideNavigationProps) {
 	return (
-		<nav className="h-full grow border-r border-gray-600 flex-shrink-0 top-16 right-0 overflow-y-auto scrollbar-thin hidden tablet:block">
-			{/* <div className="sticky top-0 h-4 bg-gradient-to-b from-black/50" /> */}
-			<ul className="flex flex-col p-4 gap-5 w-64 ml-auto">
+		<nav className="bg-primary h-full border-r border-gray-600 flex-grow flex-shrink-0 top-16 right-0 overflow-y-auto scrollbar-thin hidden tablet:block">
+			<ul className="flex flex-col p-4 gap-5 min-w-0 tablet:w-52 desktop:w-64 ml-auto">
 				{categories.map(category => (
 					<Category key={category.title} {...category} />
 				))}

@@ -2,77 +2,145 @@
 title: Installation & Setup
 ---
 
-import { Tabs, Tab, Callout } from ':ui';
+import { Tabs, Callout } from ':ui';
 
 # Installation & Setup
-
-## Package installation
 
 <Callout type="note">
 	**This guide assumes that you are using a [Rollup](https://rollupjs.org/)-
 	or [Webpack](https://webpack.js.org/)-based bundler.** The official Thyseus
-	transformer is available as a (Vite-compatible) Rollup plugin and a webpack
-	plugin. If you'd like support to be added for your bundler of choice, please
-	[file a ticket](https://github.com/JaimeGensler/thyseus/issues/new/choose)!
+	transformer is available as a (Vite-compatible) Rollup plugin and a Webpack
+	loader. If you'd like support to be added for your bundler of choice, please
+	[file a
+	ticket](https://github.com/JaimeGensler/thyseus-transformer/issues/new)!
 </Callout>
 
-To get started with Thyseus, let's install the core library:
+## Package Installation
+
+To get started with Thyseus, install the core library:
 
 {/* prettier-ignore */}
 <Tabs items={['pnpm', 'yarn', 'npm']}>
-	<Tab>
+	<Tabs.Panel>
 		```sh
 		pnpm add thyseus
 		```
-	</Tab>
-		<Tab>
+	</Tabs.Panel>
+	<Tabs.Panel>
 		```sh
 		yarn add thyseus
 		```
-	</Tab>
-	<Tab>
+	</Tabs.Panel>
+	<Tabs.Panel>
 		```sh
 		npm i thyseus
 		```
-	</Tab>
+	</Tabs.Panel>
 </Tabs>
 
-Sweet! Next, let's get the Thyseus transformer. The transformer transpiles your
-code to make it more performant and to provide better DX. All docs will assume
-you're using the transformer - if you're not, you'll need to
+## Transformer Setup
+
+Thyseus makes use of a code transformer to make your code more performant and to
+provide better DX. All docs will assume you're using the transformer - if you're
+not, you'll need to
 [review the systems docs](/docs/core_concepts/systems#systems-without-the-transformer).
 
-The transformer also depends on the use of Typescript; if you don't have
+The transformer also requires the use of Typescript; if you don't have
 experience with Typescript, it's recommended that you
 [get familiar with the basics](https://www.typescriptlang.org/docs/handbook/typescript-in-5-minutes.html)
 before starting with Thyseus.
 
-```sh
-pnpm add typescript @thyseus/transformer-rollup
-```
+Currently, the transformer is available for Rollup and Webpack.
 
-## Plugin setup
+{/* prettier-ignore */}
+<Tabs items={['Rollup', 'Vite', 'Webpack']}>
+	<Tabs.Panel>
+		The Thyseus transformer for Rollup is a plugin. Install:
 
-Next, let's add the transformer plugin to your config in order to get it working
-correctly:
+    	```sh
+    	pnpm add typescript @thyseus/transformer-rollup
+    	```
 
-```ts filename="vite.config.ts"
-import { defineConfig } from 'vite';
-import { thyseusPlugin } from '@thyseus/transformer-vite';
+    	And configure:
 
-export default defineConfig({
-	plugins: [thyseusPlugin()],
-	// your other config...
-});
-```
+    	```ts filename="rollup.config.js" {1,2,7,8}
+    	import thyseusPlugin from 'thyseus-plugin';
+    	import typescript from 'rollup-plugin-typescript2';
 
-And that's all there is to it!
+    	export default {
+    		// ...
+    		plugins: [
+    			thyseusPlugin(),
+    			typescript(),
+    		],
+    	};
+    	```
 
-## Typescript setup (optional)
+    	Note that `thyseusPlugin()` **must** appear _before_ `typescript()` in order to work, as the plugin transpiles Typescript to Typescript.
+    </Tabs.Panel>
+    <Tabs.Panel>
+    	The Thyseus transformer for Vite is a compatible Rollup plugin. Install:
 
-As Thyseus is a data-oriented library, you'll be making heavy use of its types.
-Thyseus provides two way of accessing types - direct imports from `'thyseus'`,
-or a global type injection. The choice of which to use is entirely up to you!
+    	```sh
+    	pnpm add typescript @thyseus/transformer-rollup
+    	```
+
+    	And configure:
+
+    	```ts filename="vite.config.ts" {2,5}
+    	import { defineConfig } from 'vite';
+    	import { thyseusPlugin } from '@thyseus/transformer-rollup';
+
+    	export default defineConfig({
+    		plugins: [thyseusPlugin()],
+    	});
+    	```
+    </Tabs.Panel>
+    <Tabs.Panel>
+    	The Thyseus transformer for Webpack is a loader. Install:
+    	```sh
+    	pnpm add typescript @thyseus/transformer-webpack
+    	```
+
+    	And configure:
+
+    	```js filename="webpack.config.js" {11-14}
+    	module.exports = {
+    		module: {
+    			rules: [
+    				{
+    					test: /\.ts$/,
+    					use: [
+    						{
+    							loader: 'ts-loader',
+    							options: {},
+    						},
+    						{
+    							loader: '@thyseus/transformer-webpack',
+    							options: {},
+    						},
+    					],
+    				},
+    			],
+    		},
+    	};
+    	```
+
+    	Note that `@thyseus/transformer-webpack` **must** appear _after_ `ts-loader` in order to work, as the plugin transpiles Typescript to Typescript
+    </Tabs.Panel>
+
+</Tabs>
+
+## Typescript Setup
+
+Thyseus currently uses legacy decorators; your `tsconfig.json` must include
+`"experimentalDecorators": true`.
+
+### Global Type Setup (optional)
+
+ECS is a data-oriented paradigm and makes heavy use of types. Thyseus provides
+two way of accessing its types - direct imports from `'thyseus'`, or a global
+type injection. The choice of which to use is entirely up to you!
 
 If you'd like to use global type injection, you can add a `.d.ts` file with the
 following:

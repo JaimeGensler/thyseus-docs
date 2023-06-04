@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
-import Link from 'next/link';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { Combobox, Dialog, Transition } from '@headlessui/react';
-import { Icon } from ':ui';
-import { useFlexSearch } from './useFlexSearch';
+import { ButtonOrLink, Icon, KeyboardKey } from ':ui';
+import { useFlexSearch, type SearchResult } from './useFlexSearch';
 
 // Adapted from https://www.youtube.com/watch?v=-jix4KyxLuQ
 
@@ -13,14 +12,21 @@ type Props = {
 };
 export function SearchDialog({ isOpen, setIsOpen }: Props) {
 	const router = useRouter();
-	const { results, handleChange } = useFlexSearch();
-	const [value, setValue] = useState('');
+	const { results, handleChange, load, clearResults } = useFlexSearch();
+	const [query, setQuery] = useState('');
+
+	useEffect(() => {
+		load();
+	}, [isOpen]);
 
 	return (
 		<Transition.Root
 			show={isOpen}
 			as={React.Fragment}
-			afterLeave={() => setValue('')}
+			afterLeave={() => {
+				setQuery('');
+				clearResults();
+			}}
 		>
 			<Dialog
 				onClose={setIsOpen}
@@ -47,55 +53,84 @@ export function SearchDialog({ isOpen, setIsOpen }: Props) {
 				>
 					<Combobox
 						as="div"
-						className="relative max-w-xl mx-auto bg-primary-light top-[25vh] shadow-2xl rounded-xl ring-2 ring-gray-300/50"
+						className="relative max-w-xl mx-auto bg-gray-700 top-[25vh] shadow-2xl rounded-xl ring-2 ring-gray-300/50"
 						onChange={(val: string) => {
 							setIsOpen(false);
 							router.push(val);
 						}}
 					>
-						<div className="flex items-center px-4 py-2">
-							<Icon
-								type="search"
-								className="w-6 h-6 text-gray-500"
-							/>
+						<div className="flex items-center px-4 py-2 text-gray-200">
+							<Icon type="search" className="w-6 h-6" />
 							<Combobox.Input
 								placeholder="Search..."
-								value={value}
-								className="w-auto h-8 bg-transparent text-gray-300 border-0 focus:ring-0 placeholder-gray-600"
+								value={query}
+								className="flex-1 h-8 bg-transparent border-0 focus:ring-0 placeholder-gray-500"
 								onChange={e => {
-									setValue(e.target.value);
+									setQuery(e.target.value);
 									handleChange(e.target.value);
 								}}
 							/>
-						</div>
-						<div className="w-full px-4 h-px">
-							<div className="bg-gray-800 w-full h-full" />
+							<KeyboardKey keyName="ESC" />
 						</div>
 						{results.length > 0 && (
 							<Combobox.Options
 								static
-								className="py-2 overflow-y-auto max-h-64"
+								className="mx-4 overflow-y-auto max-h-64 border-t border-gray-500 divide-y divide-gray-600"
 							>
-								{results.map(
-									({ route, prefix, children, id }, i) => (
-										<Combobox.Option key={id} value={i}>
-											{prefix}
-											<li>
-												<Link
-													href={route}
-													data-index={i}
-												>
-													{children}
-												</Link>
-											</li>
-										</Combobox.Option>
-									),
-								)}
+								{results.map((result, i) => (
+									<Result {...result} value={i} key={i} />
+								))}
 							</Combobox.Options>
+						)}
+						{query && results.length === 0 && (
+							<p className="mx-4 border-t border-gray-600 text-sm text-gray-400 py-4">
+								No results found.
+							</p>
 						)}
 					</Combobox>
 				</Transition.Child>
 			</Dialog>
 		</Transition.Root>
+	);
+}
+
+const getHighlightedText = (text: string, highlight: string) =>
+	text.split(new RegExp(`(${highlight})`, 'gi')).map((part, index) =>
+		part.toLowerCase() === highlight.toLowerCase() ? (
+			<mark key={index} className="bg-accent/10 text-accent">
+				{part}
+			</mark>
+		) : (
+			<span key={index}>{part}</span>
+		),
+	);
+
+function Result({
+	value,
+	route,
+	match,
+	context,
+	pageTitle,
+	title,
+}: SearchResult & { value: number }) {
+	return (
+		<Combobox.Option className="py-1 flex" value={route}>
+			<div className="py-1.5 px-2 ui-active:bg-accent/25 rounded-lg w-full">
+				<div className="text flex items-center gap-1 text-gray-400">
+					<span className="text-white">{pageTitle}</span>
+					{pageTitle !== title && (
+						<>
+							<Icon type="chevron-right" className="w-2 h-2" />
+							<span className="text-xs flex-1 truncate">
+								{title}
+							</span>
+						</>
+					)}
+				</div>
+				<div className="text-sm">
+					{getHighlightedText(context, match)}
+				</div>
+			</div>
+		</Combobox.Option>
 	);
 }

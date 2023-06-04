@@ -2,6 +2,8 @@
 title: Rules of Multithreading
 ---
 
+import { Opinion } from ':ui';
+
 # Rules of Multithreading
 
 Thyseus strives to make multithreading trivially easy without introducing new or
@@ -31,31 +33,34 @@ order to identify them between threads. As a result, passing anything other than
 order systems or plugins are registered in will almost always result in
 incorrect behavior.
 
-Bad:
+<Opinion type="negative" title="Bad">
+    ```ts
+    const myWorld = await World
+		.new({ threads: 2 }, './aDifferentModule');
+    ```
+</Opinion>
 
-```ts
-const myWorld = await World.new({ threads: 2 }, './aDifferentModule');
-```
+<Opinion type="negative" title="Also bad">
+	```ts
+	const myWorldBuilder = await World
+		.new({ threads: 2 }, import.meta.url)
+		// There's really no use case for this, anyway...
+		.addSystem(Math.random() > 0.5 ? systemA : systemB)
+		.build();
+	```
+</Opinion>
 
-Also Bad:
-
-```ts
-const myWorldBuilder = await World.new({ threads: 2 }, import.meta.url)
-	// There's really no use case for this, anyway...
-	.addSystem(Math.random() > 0.5 ? systemA : systemB)
-	.build();
-```
-
-Good:
-
-```ts
-const myWorldBuilder = await World.new({ threads: 2 }, import.meta.url)
-	.addSystem(systemA)
-	.addSystem(systemB)
-	.addSystem(systemC)
-	// ... and so on ...
-	.build();
-```
+<Opinion type="positive" title="Good">
+	```ts
+	const myWorldBuilder = await World
+		.new({ threads: 2 }, import.meta.url)
+		.addSystem(systemA)
+		.addSystem(systemB)
+		.addSystem(systemC)
+		// ... and so on ...
+		.build();
+	```
+</Opinion>
 
 It is permissible to conditionally register systems or plugins **_only if_** the
 conditions are consistent between threads.
@@ -66,48 +71,51 @@ conditions are consistent between threads.
 communicates with other threads to run systems in parallel. Calling this method
 on multiple threads will have unpredictable results.
 
-Bad:
+<Opinion type="negative" title="Bad">
+	```ts
+	const world = await World.new().build();
 
-```ts
-const world = await World.new().build();
+    async function update() {
+    	await world.update();
+    	requestAnimationFrame(update);
+    }
+    update();
+    ```
 
-async function update() {
-	await world.update();
-	requestAnimationFrame(update);
-}
-update();
-```
+</Opinion>
 
-Better, but not great:
+<Opinion type="positive" title="Okay, but not great">
+	```ts
+	const world = await World.new().build();
 
-```ts
-const world = await World.new().build();
+    // Check if this is the main thread
+    if (globalThis.document) {
+    	async function update() {
+    		await world.update();
+    		requestAnimationFrame(update);
+    	}
+    	update();
+    }
+    ```
 
-// Check if this is the main thread
-if (globalThis.document) {
-	async function update() {
-		await world.update();
-		requestAnimationFrame(update);
-	}
-	update();
-}
-```
+</Opinion>
 
-Best:
+<Opinion type="positive" title="Best">
+	```ts
+	// ModuleA
+	export const world = await World.new().build();
 
-```ts
-// ModuleA
-export const world = await World.new().build();
+    // ModuleB (application entry)
+    import { world } from './ModuleA';
 
-// ModuleB (application entry)
-import { world } from './ModuleA';
+    async function update() {
+    	await world.update();
+    	requestAnimationFrame(update);
+    }
+    update();
+    ```
 
-async function update() {
-	await world.update();
-	requestAnimationFrame(update);
-}
-update();
-```
+</Opinion>
 
 ## The module the world is built in, _or any module it imports_, should not have top-level references to context-specific APIs.
 
@@ -133,44 +141,45 @@ still, this is not recommended).
 Constants will work just fine, so long as they do not depend on script execution
 context (like accessing `document`).
 
-Bad:
+<Opinion type="negative" title="Bad">
+	```ts
+	let myLocalCounter = 0;
+	function aSystem() {
+		myLocalCounter++;
+		console.log(myLocalCounter); // This will not have a predictable value!
+	}
+	```
+</Opinion>
 
-```ts
-let myLocalCounter = 0;
-function aSystem() {
-	myLocalCounter++;
-	console.log(myLocalCounter); // This will not have a predictable value!
-}
-```
+<Opinion type="negative" title="Also Bad">
+	```ts
+	const myLocalArray = [];
+	function anotherSystem() {
+		myLocalArray.push('a value');
+		console.log(myLocalCounter); // This will not have predictable contents!
+	}
+	```
+</Opinion>
 
-Also bad:
+<Opinion type="positive" title="Good">
+	```ts
+	const myConstant = 5;
+	const myCollectionOfConstants = {
+		a: 1,
+		b: 2,
+		c: 3,
+	} as const;
 
-```ts
-const myLocalArray = [];
-function anotherSystem() {
-	myLocalArray.push('a value');
-	console.log(myLocalCounter); // This will not have predictable contents!
-}
-```
+    function aSystem() {
+    	// This will always be 5!
+    	console.log(myConstant);
 
-Good:
+    	// As long as you don't mutate values, this will behave well.
+    	console.log(myCollectionOfConstants);
+    }
+    ```
 
-```ts
-const myConstant = 5;
-const myCollectionOfConstants = {
-	a: 1,
-	b: 2,
-	c: 3,
-} as const;
-
-function aSystem() {
-	// This will always be 5!
-	console.log(myConstant);
-
-	// As long as you don't mutate values, this will behave well.
-	console.log(myCollectionOfConstants);
-}
-```
+</Opinion>
 
 If you need data that's "local" to a system and can safely be mutated, you may
 want [system resources](/systems/resources#system-resources).

@@ -6,96 +6,66 @@ import { Callout } from ':ui';
 
 # Queries
 
-As their name implies, Queries allow you to query for entities that have a
-specific collection of components. They're one of the most fundamental building
-blocks of any ECS and are the primary way you'll access component data. In
-Thyseus, queries are system parameters, so systems can specify as many queries
-as they need (including zero) to function.
+Queries allow you to find all entities that have a specific collection of
+components. They're one of the most fundamental building blocks of any ECS and
+are the primary way you'll access component data. In Thyseus, queries are system
+parameters, so systems can specify as many queries as they need.
 
-## Accessing data
+## Accessing Data
 
-To query for a specific component, simply provide it to the query descriptor
-function. Your system will receive a query as an argument that can be iterated
-over:
+To query for a specific component, you can provide it as the first generic of
+the `Query` type. Your system will receive a query as an argument that can be
+iterated over:
 
 ```ts
 import { struct } from 'thyseus';
+import { Health } from './components';
 
-@struct
-class MyComponent {
-	@struct.f64 declare myValue: number;
-}
-
-export function querySystem(query: Query<MyComponent>) {
-	for (const myComp of query) {
-		console.log(myComp.myValue);
+export function querySystem(query: Query<Health>) {
+	for (const health of query) {
+		console.log(`${health.current}/${health.max}`);
 	}
 }
 ```
 
-In the above example, we create a query for entities with the `MyComponent`
-component - the query will match all entities with this component. In our
-system, we iterate over each of those entities and log the value of the entity's
-component. In this example, the yielded `myComp` values will be instances of
-`MyComponent`.
+Here, we're querying for all entities with the `Health` component. In our system
+we iterate over each of those entities and log the current and max values; the
+yielded `health` value will be an instance of `Health`.
 
 <Callout type="warn">
-	You **should not** grab and hold a reference to the component instance for
-	use outside of iteration, as Thyseus re-uses component instances for
-	performance reasons.
+	Thyseus re-uses component instances during iteration for performance
+	reasons, so **you should not grab and hold a reference to it**.
 </Callout>
 
-But what if you want to access multiple components in the same query? No
-problem, just use a tuple:
+If you'd like to access multiple components in the same query, you can use a
+tuple:
 
-```ts
+```ts {4}
 import { struct } from 'thyseus';
+import { Position, Velocity } from './components';
 
-@struct
-class CompA {
-	@struct.f64 declare valueA: number;
-}
-@struct
-class CompB {
-	@struct.f64 declare valueB: number;
-}
-
-export function queryABSystem(query: Query<[CompA, CompB]>) {
-	for (const [compA, compB] of query) {
-		console.log(compA, compB);
+export function queryABSystem(query: Query<[Position, Velocity]>) {
+	for (const [pos, vel] of query) {
+		console.log(pos, vel);
 	}
 }
 ```
 
-In this case, the query will yield tuples where the first element is an instance
-of `CompA` and the second an instance of `CompB`. You can use an array of any
-size to specify the components you need (you cannot nest arrays).
+In this case, the query will yield `[Position, Velocity]` tuples. You can use
+tuples of any size to specify the components you need, but you cannot nest
+tuples.
 
-If you're using Typescript, you'll likely have noticed that both `compA` and
-`compB` are readonly. **By default, queries only allow you to access component
-data readonly.** Of course, data that can only ever be read is of very limited
-use to us.
+If you're copying these examples locally, you may have noticed that both `pos`
+and `vel` are typed as `readonly`. **By default, queries only provide `readonly`
+access to components.** Of course, data that can only ever be read is of very
+limited use to us.
 
-> At the moment, Thyseus does not throw an error if you write data that you've
-> requested readonly. In the future, this will likely change to provide better
-> guarantees on code correctness. Typescript will help prevent you from making
-> these mistakes!
-
-### Writing data
+### Writing Data
 
 Mutable component data is as easy as wrapping your components in `Mut`:
 
 ```ts
-import { struct } from 'thyseus';
-
-@struct
-class Vec3 {
-	@struct.f64 declare x: number;
-	@struct.f64 declare y: number;
-	@struct.f64 declare z: number;
-}
-class Position extends Vec3 {}
-class Velocity extends Vec3 {}
+import { Position, Velocity } from './components';
 
 export function moveSystem(query: Query<[Mut<Position>, Velocity]>) {
 	// Now position is mutable, but velocity is still readonly.
@@ -107,43 +77,21 @@ export function moveSystem(query: Query<[Mut<Position>, Velocity]>) {
 }
 ```
 
-You can wrap as many components as you need in `Mut`. Though it may be tempting
-to make everything mutable (_"just in case"_), you should only use it if you
-need it. When running systems in parallel, declaring that you _may_ write a
-component - **even if you don't** - prevents other systems that read or write
-that data from running in parallel, potentially negatively impacting
-performance. Alongside the general safety and correctness of readonly, this is
-why Thyseus makes components readonly by default.
+Queries can have as many mutable components as needed! While it may be tempting
+to make everything mutable _just in case_, you should prefer immutability when
+possible.
 
-### Optional access
-
-For some systems, you may want to access component data if any entity has a
-particular component, without impacting matches if it doesn't have that
-component. For this, you may use `Optional`. Optional may wrap components (or
-Mut components), and will either yield `null` or an instance of that component.
-
-```ts
-function yourSystem(
-	query: Query<[CompA, Optional<CompB>, Optional<Mut<CompC>>]>,
-) {
-	for (const [a, maybeB, maybeMutableC] of query) {
-		// Always do something
-
-		if (maybeB) {
-			// Read something conditionally
-		}
-		if (maybeMutableC) {
-			// Write something else conditionally
-		}
-	}
-}
-```
+<Callout type="warn">
+	At the moment, Thyseus does not throw an error if you write data that you've
+	requested readonly. **This will likely change in the future**. For now,
+	Typescript will help prevent these mistakes!
+</Callout>
 
 ## Filters
 
 Queries also allow you to specify that entities must have or _not_ have specific
 components without needing access to those components. These are known as
-**_Query Filters_**. Filters are the second argument of the `Query()` descriptor
+**_filters_**. Filters are the second argument of the `Query()` descriptor
 creator, and must always be wrapped in some filter specifier.
 
 ### With
@@ -194,7 +142,7 @@ items.
 function yourSystem(query: Query<A, Or<With<B>, With<C>>>) {}
 ```
 
-### Filter simplification and impossible queries
+### Filter Simplification & Impossible Queries
 
 When queries are created, they will look for impossible conditions and remove
 them from the list of potential match patterns in a "simplification" process.
@@ -214,7 +162,7 @@ Let's consider a slightly more complex query that simplifies but does not throw:
 {/* prettier-ignore */}
 ```ts
 function yourSystem(query: Query<
-	Z,
+	_,
 	[
 		Or<With<A>, With<B>>,
 		Or<Without<A>, Without<B>>
@@ -225,10 +173,10 @@ function yourSystem(query: Query<
 Strictly speaking, there are four possible ways an entity could match this
 query:
 
-1. (A && !A) - The entity has **A** and does not have **A**.
-2. (A && !B) - The entity has **A** and does not have **B**.
-3. (B && !A) - The entity has **B** and does not have **A**.
-4. (B && !B) - The entity has **B** and does not have **B**.
+-   (A && !A) - The entity has **A** and does not have **A**.
+-   (A && !B) - The entity has **A** and does not have **B**.
+-   (B && !A) - The entity has **B** and does not have **A**.
+-   (B && !B) - The entity has **B** and does not have **B**.
 
 Conditions 1 and 4 are impossible and so will be removed from the query matching
 process, leaving us with two possible conditions to check. In this case, no

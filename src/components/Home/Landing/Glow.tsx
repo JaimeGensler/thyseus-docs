@@ -26,9 +26,9 @@ export function Glow(props: React.ComponentPropsWithoutRef<'svg'>) {
 					width="1739"
 					height="634.012"
 					filterUnits="userSpaceOnUse"
-					color-interpolation-filters="sRGB"
+					colorInterpolationFilters="sRGB"
 				>
-					<feFlood flood-opacity="0" result="BackgroundImageFix" />
+					<feFlood floodOpacity="0" result="BackgroundImageFix" />
 					<feBlend
 						mode="normal"
 						in="SourceGraphic"
@@ -48,10 +48,10 @@ export function Glow(props: React.ComponentPropsWithoutRef<'svg'>) {
 					y2="484"
 					gradientUnits="userSpaceOnUse"
 				>
-					<stop offset="0.0520833" stop-color="#F0FF46" />
-					<stop offset="0.09375" stop-color="#21BC4C" />
-					<stop offset="0.40625" stop-color="#01411A" />
-					<stop offset="1" stop-color="#03293C" />
+					<stop offset="0.0520833" stopColor="#F0FF46" />
+					<stop offset="0.09375" stopColor="#21BC4C" />
+					<stop offset="0.40625" stopColor="#01411A" />
+					<stop offset="1" stopColor="#03293C" />
 				</linearGradient>
 			</defs>
 		</svg>

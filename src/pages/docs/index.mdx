@@ -6,9 +6,28 @@ title: 'Introduction'
 
 Thyseus is an Entity Component System (ECS) framework written in Typescript.
 Taking much inspiration from [Bevy](https://bevyengine.org/), it aims to provide
-a best-in-class developer experience without sacrificing performance.
+a best-in-class developer experience _without sacrificing performance_.
 
-ECS is a data-oriented design approach typically used for game development that
-promotes modularity and reusability by separating data and behavior. It consists
-of **entities**, which are unique identifiers; **components** which is plain
-data without behavior; and **systems**, which operate on ECS data.
+ECS is a data-oriented design approach to development - typically used for game
+dev - that promotes modularity and reusability by separating data and behavior.
+It consists of **entities**, which are unique identifiers; **components** which
+are plain data without behavior; and **systems**, which operate on data. For a
+good introduction to the paradigm, read the
+[ECS FAQ](https://github.com/SanderMertens/ecs-faq) by Sander Mertens.
+
+Thyseus is a powerful foundation for you to build your own complex applications
+on that remains deeply configureable and composeable. It supports a number of
+features out of the box, including:
+
+-   A safety-first approach (no `eval` or eval-like constructs)
+-   Hassle-free multithreading
+-   Archetypal storage
+-   Complex queries
+-   Deeply customizable execution logic
+-   Dynamically-sized types
+-   World-unique data
+-   Event handling
+-   Fine-grain memory management
+-   Integration with third-party libraries
+
+Let's dive into it!

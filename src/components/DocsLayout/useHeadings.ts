@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import { usePageContext } from '../PageContext';
+import { usePageOptions } from ':hooks';
 
 export function useHeadings() {
-	const { headings } = usePageContext();
+	const { headings } = usePageOptions();
 	return useMemo(
 		() =>
 			headings.map(h =>

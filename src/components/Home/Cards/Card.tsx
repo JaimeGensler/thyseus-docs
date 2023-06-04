@@ -14,5 +14,5 @@ Card.Title = function CardTitle({ children }: React.PropsWithChildren) {
 	);
 };
 Card.Content = function CardContent({ children }: React.PropsWithChildren) {
-	return <div>{children}</div>;
+	return <p className="text-center">{children}</p>;
 };

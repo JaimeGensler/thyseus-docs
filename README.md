@@ -3,7 +3,7 @@
 [![pull requests: welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)](https://github.com/JaimeGensler/thyseus/pulls)
 [![code style: prettier](https://img.shields.io/badge/code%20style-prettier-ff69b4)](https://github.com/prettier/prettier)
 
-The docs for Thyseus - available at [thyseus.dev](https://www.thyseus.dev).
+The docs for Thyseus - available at [thyseus.dev](https://thyseus.dev).
 
 ## Contributing
 

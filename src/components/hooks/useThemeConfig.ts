@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import config from '../../theme.config';
+import config from '../../../theme.config';
 
 type ThemeConfig = {
 	projectRepository: string;

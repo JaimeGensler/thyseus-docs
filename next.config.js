@@ -1,6 +1,8 @@
 const withNextra = require('nextra')({
-	// theme: 'nextra-theme-docs',
 	theme: './src/components',
+	flexsearch: {
+		codeblocks: false,
+	},
 	themeConfig: './theme.config.jsx',
 });
 

@@ -15,7 +15,8 @@
 		"jsx": "preserve",
 		"baseUrl": "src",
 		"paths": {
-			":ui": ["components/ui/index.ts"]
+			":ui": ["components/ui/index.ts"],
+			":hooks": ["components/hooks/index.ts"]
 		}
 	},
 	"include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],

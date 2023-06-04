@@ -4,4 +4,72 @@ title: Entities
 
 # Entities
 
-Entities
+Entities are the building blocks of an ECS. Any concrete "thing" in your game
+world can be represented as an entity; players, enemies, items, the game level
+itself, even parts of the UI - all entities! Conceptually, an entity is simply
+an empty container for any number of **components**, and contains no special
+properties, data, or meaning on its own. In practice, an entity is nothing more
+than an integer id.
+
+Because entities contain no inherent data or meaning, it's not particularly
+common to deal with them directly; instead, you'll usually interact with
+_components_, the data that belongs to an entity.
+
+## Creating Entities
+
+New entities can be created using `Commands`. We'll cover systems and the
+`Commands` API more in the future - for now, we'll write some _very_ simple
+systems to show you how to work with entities!
+
+```ts
+function spawnEntity(commands: Commands) {
+	const entity = commands.spawn();
+	console.log(entity.id); // This will always be a (u64) bigint.
+}
+```
+
+This is a basic system that accepts the `Commands` object. `commands.spawn()`
+_queues_ an entity to be spawned and returns an `EntityCommands` object. This
+object can be used to queue additional commands to insert (or remove) components
+for that entity. It also provides a getter to see the id of the newly spawned
+entity.
+
+**Entities are not created immediately**. Instead, `Commands` reserves an id and
+adds the entity creation request to a queue. Entities are created later when the
+`applyCommands` system runs, which drains the queue of all commands. Created
+entities are not observable until _after_ commands have been applied!
+
+## Accessing Entity IDs
+
+Every entity possesses a special `Entity` component. This component allows you
+to access the entity's id, and can be queried for in systems (_queries will be
+covered more later, too!_).
+
+```ts
+import { Entity } from 'thyseus';
+
+// This query matches every living entity!
+function logAllEntityIds(query: Query<Entity>) {
+	for (const entity in query) {
+		console.log(entity.id);
+	}
+}
+```
+
+## Destroying Entities
+
+Of course, not all entities will live forever. You can use `Commands` or
+`EntityCommands` to queue an entity for destruction; **just like creation,
+entities are not destroyed until the `applyCommands()` system runs**!
+
+```ts
+function destroyEntity(commands: Commands) {
+	const entity = commands.spawn();
+
+	// If you have the `EntityCommands` object
+	entity.despawn();
+
+	// If you just have the id!
+	commands.despawn(entity.id);
+}
+```

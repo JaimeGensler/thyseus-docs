@@ -1,5 +1,4 @@
 import React from 'react';
-import {} from 'nextra-theme-docs';
 
 type ClassProps = {
 	name: React.ReactNode;

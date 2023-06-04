@@ -4,9 +4,10 @@ import Link from 'next/link';
 import { Code } from './Code';
 import clsx from 'clsx';
 import { createComponent } from './createElement';
+import { ArticleHeader, ArticleTitle } from './ArticleHeader';
 
 const mdxComponents = {
-	h1: createComponent(Heading, '', { level: 1 }),
+	h1: () => null,
 	h2: createComponent(Heading, '', { level: 2 }),
 	h3: createComponent(Heading, '', { level: 3 }),
 	// h4-h6 omitted as they are currently unused and unsupported by TOC
@@ -42,15 +43,15 @@ export function Article({
 	return (
 		<article
 			className={clsx(
-				'text-gray text-base leading-7 w-[720px]',
+				'text-gray text-base leading-7 min-w-[300px] max-w-[min(100vw,680px)]',
 				className,
 			)}
 		>
-			{/* <div className="prose prose-invert"> */}
 			<MDXProvider components={mdxComponents as any}>
 				{children}
 			</MDXProvider>
-			{/* </div> */}
 		</article>
 	);
 }
+Article.Header = ArticleHeader;
+Article.Title = ArticleTitle;

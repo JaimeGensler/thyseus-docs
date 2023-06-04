@@ -2,22 +2,50 @@
 title: Components
 ---
 
-import { Callout } from ':ui';
+import { Callout, Opinion } from ':ui';
 
 # Components
 
 A component is a unit of data that belong to an entity. An entity can have 0 or
 more components and can add or remove components throughout the course of its
-life. Components should typically be granular and self-contained - think of them
-as pure data types that could be added to any entity. Components describe any
-data belonging to an entity, such as `Transform`, `Health`, `Inventory`,
-`IsPlayer`, and anything else you need!
+life. Components should be granular, self-contained "pure" data types that could
+be added - or not added - to any entity. They can describe any data belonging to
+an entity, such as `Transform`, `Health`, `Inventory`, `IsPlayer`, and anything
+else you need!
 
-## Writing a component
+Unlike GameObject/Component-based game architecture, **ECS components should not
+contain general _systems_ behavior**. However, Thyseus allows (and encourages!)
+components to contain functionality for common manipulations to their data.
 
-Components are decorated classes:
+## Writing Components
+
+Components represent types of data - what more natural way to write them than as
+classes? Specifically, components are classes decorated with the `@struct`
+decorator:
 
 ```ts
+import { struct } from 'thyseus';
+
+@struct
+class Health {
+	@struct.u16 declare max: number;
+	@struct.u16 declare current: number;
+}
+```
+
+Using the `@struct` and `@struct.<field>` decorators, we've defined a `Health`
+component with two fields - the `max` and the `current` health of the entity it
+belongs to. The `@struct.u16` decorator means that the property contains a `u16`
+value (short for _unsigned 16-bit integer_).
+
+### Methods
+
+If we wanted to change the values for an instance, we could directly mutate them
+with `health.current = 5` and `health.max = 10`. In this particular case,
+though, there's nothing stopping `current` from exceeding `max` - something we
+probably never want! This is a great case for methods:
+
+```ts {8-11,13-18}
 import { struct } from 'thyseus';
 
 @struct
@@ -33,34 +61,33 @@ class Health {
 	takeDamage(amount: number): boolean {
 		// Clamp to 0 to prevent integer underflow
 		this.current = Math.max(0, this.current - ammount);
-		// Return boolean indicating if this died!
+		// Return a boolean indicating if this entity died!
 		return this.current === 0;
 	}
 }
-
-// If you were iterating Entities with a health component:
-const health = new Health();
-console.log(`${health.current}/${health.max}`); // 0 / 0
-health.current = 3;
-console.log(health.current); // 3
 ```
 
-We can use the `@struct` decorator to denote that the `Health` class is what
-Thyseus refers to a "struct." Any class decorated with `struct` can be used as a
-component! Properties on that class **_must_** be decorated as well with the
-type of that property. Just like any other class, your components may or may not
-contain methods.
+Great! Now instead of directly modifying `max` and `current`, we can just use
+the `heal()` and `takeDamage()` methods. This helps to keep our code dry, easily
+testable, and keeps the common functionality of `Health` in one place.
 
-<Callout type="warn">
-	Thyseus cannot see non-decorated properties! If you declare a property on
-	your class without a decorator, you will not have consistent, predictable
-	behavior!
+Note that the methods here describe operations on the data itself, and does not
+contain generalized behavior like an `update()` method. This `Health` component
+could be reasonably re-used by numerous, vastly different applications, because
+_how_ this component will be used is left to systems!
+
+### Component Field Types
+
+<Callout type="note">
+	For components to work correctly, component classes **must** be decorated
+	with `@struct`, and all properties **must** be decorated with a property
+	decorator!
 </Callout>
 
-Thyseus also allows granular control of your numeric types. While Javascript
-must behave as
+Components allow granular control of your numeric types. While Javascript
+numbers must behave as
 [double precision 64-bit floating point numbers](https://en.wikipedia.org/wiki/Double-precision_floating-point_format),
-Thyseus requires you declare more specifically what sort of number a property
+Thyseus allows you to declare more specifically what _kind_ of number a property
 is. The primitive types are all properties of `@struct`, and are listed below:
 
 | Name | Description                  | Size (bytes) | JS Type |
@@ -77,17 +104,16 @@ is. The primitive types are all properties of `@struct`, and are listed below:
 | f64  | 64-bit Floating Point number | 8            | number  |
 | bool | Boolean (`true`/`false`)     | 1            | boolean |
 
-If you're coming from a Javascript background and are not used to working with
-multiple numeric types, don't worry; `@struct.f64` works like the numbers you're
-used to, and is a fine choice! It just may not always be the best fit for the
-job.
+If you're not used to working with different numeric types, don't worry -
+`@struct.f64` works like the Javascript numbers you're used to, and is a fine
+choice getting started! It just may not always be the best fit.
 
 ## Constructors
 
 You may provide a constructor for your structs, provided you pass `this` to the
-`initStruct` function first (similar to calling `super()` in subclasses):
+`initStruct` function first - similar to calling `super()` in subclasses.
 
-```ts
+```ts {8-14}
 import { struct, initStruct } from 'thyseus';
 
 @struct
@@ -102,54 +128,84 @@ class Health {
 		this.max = max;
 		this.current = current;
 	}
-
-	// ...
 }
 ```
 
-Constructors also may not have any required arguments. You can use this feature
+**Constructors may not have any required arguments**. You can use this feature
 to set default values of components when adding them to entities - for example,
 in the above case, if you add the `Health` component to an entity without
 specifying a `current` and `max` value, both will be set to 100.
 
-### Avoiding construction
+### Avoiding Construction
 
-In general, it is best to **avoid constructing structs yourself** (e.g.
-`new MyStruct()`).
+In general, it is best to **avoid constructing components yourself** (e.g.
+`new Health()`).
 
 Thyseus takes responsibility for the lifetime of objects that it creates;
 however, **if you call a constructor yourself, you become responsible for
-cleaning up that struct instance when it is no longer used.** Instances that you
-are responsible for must call the `dropStruct()` function when they go out of
-scope. If you'd like an instance of a struct to hold on to, consider using a
-[system resources](/docs/systems/resources#system-resource).
+cleaning up that struct instance when it is no longer used.** Instances you own
+must call the `dropStruct()` function when they go out of scope. If you need a
+local component instance, consider using
+[system resources](/docs/system_parameters/system_resources).
+
+<Opinion type="negative" title="Bad (will cause a memory leak)">
+	```ts {4}
+	import { Position } from './components';
+
+    function spawnEntities(commands: Commands) {
+    	commands.spawn().add(new Position(1, 2, 3));
+    }
+    ```
+
+</Opinion>
+
+<Opinion type="positive" title="Good">
+	```ts
+	import { dropStruct } from 'thyseus';
+	import { Position } from './components';
+
+    function spawnEntities(commands: Commands) {
+    	const position = new Position(1, 2, 3);
+    	commands.spawn().add(position);
+    	dropStruct(position);
+    }
+    ```
+
+</Opinion>
+
+<Opinion type="positive" title="Best">
+	```ts {3}
+	import { Position } from './components'
+
+    function spawnEntities(
+    	commands: Commands,
+    	pos: SystemRes<Position>
+    ) {
+    	pos.set(1, 2, 3);
+    	commands.spawn().add(pos);
+    	// Thyseus owns pos, so you don't need to drop it here
+    }
+    ```
+
+</Opinion>
 
 ## Non-primitive fields
 
-Thyseus allows you to use more complex types, with the caveat that they must be
-statically sized. For example, if you need to use arrays, you have to declare
-upfront the size of that array, as well as the types of the elements that array
-contains. Currently, there are three decorators for complex types.
+While primitives will work for many cases, sometimes you need more complex
+types. Thyseus provides three decorators for complex types out of the box.
 
-### `@struct.string()`
+### `@struct.string`
 
 ```ts
 @struct
 class MyStruct {
-	@struct.string({ characterCount: 4 }) declare str: string;
-
-	@struct.string({ byteLength: 12 }) declare str2: string;
+	@struct.string declare str: string;
 }
 ```
 
-The `@struct.string()` decorator allows your struct to contain strings. The
-decorator accepts an options object containing either
-`{ characterCount: number }` or `{ byteLength: number }`. If `characterCount` is
-set, your string can contain up to the specified number of characters.
-`byteLength` is useful if you want more control over the exact allocation size.
-
-Note that unlike typical Javascript strings, `'\u0000'` characters terminate the
-string.
+The `@struct.string` decorator looks like a primitive decorator, but is
+considered complex because dynamically sized strings require dynamic allocation.
+You can get and set Javascript strings as you'd expect with this decorator!
 
 ### `@struct.array()`
 
@@ -157,15 +213,14 @@ string.
 @struct
 class MyStruct {
 	@struct.array({ type: 'u8', length: 4 }) declare arr: Uint8Array;
-
 	@struct.array({ type: 'f32', length: 16 }) declare str2: Float32Array;
 }
 ```
 
 This decorator allows you to specify a typed array as a property. It accepts an
 options object containing `{ type: PrimitiveType, length: number}`. Type is one
-of the primitive types listed above (`'u8'`, `u16`, etc.) and length is the
-number of elements the array contains.
+of the numeric primitive types listed above (`'u8'`, `u16`, etc.) and length is
+the number of elements the array contains.
 
 ### `@struct.substruct()`
 
@@ -189,87 +244,88 @@ class to be a member of a struct, and will return an instance of that struct.
 
 ## Extending Structs
 
-For the most part, structs will work just like any other Javascript class.
-**However, there is one caveat when extending structs: you may safely extend a
-component _only so long as you do not add additional fields_**. If you'd like to
-extend a component with new fields, you'll need to instead use the
-`@struct.substruct` decorator.
+For the most part, `@struct`-decorated classes will work just like any other
+Javascript class. However, **extending structs only works so long as you do not
+add additional fields**. If you'd like to extend a component with new fields,
+you'll need to instead use the `@struct.substruct` decorator.
 
-Bad (will not work as expected):
-
-```ts
-@struct
-class Vec2 {
-	@struct.f64 declare x: number;
-	@struct.f64 declare y: number;
-}
-
-@struct
-class Vec3 extends Vec2 {
-	// We cannot extend structs with new fields!
-	@struct.f64 declare z: number;
-}
-```
-
-Good:
-
-```ts
-@struct
-class Vec2 {
-	@struct.f64 declare x: number;
-	@struct.f64 declare y: number;
-}
-
-class Vec3 {
-	@struct.substruct(Vec2) declare vec2: Vec2;
-	@struct.f64 declare z: number;
-
-	get x() {
-		return this.vec2.x;
+<Opinion type="negative" title="Bad, will not work as expected">
+	```ts
+	@struct
+	class Vec2 {
+		@struct.f64 declare x: number;
+		@struct.f64 declare y: number;
 	}
-	set x(value: number) {
-		this.vec2.x = value;
+
+    @struct
+    class Vec3 extends Vec2 {
+    	// We cannot extend structs with new fields!
+    	@struct.f64 declare z: number;
+    }
+    ```
+
+</Opinion>
+
+<Opinion type="positive" title="Good">
+	```ts
+	@struct
+	class Vec2 {
+		@struct.f64 declare x: number;
+		@struct.f64 declare y: number;
 	}
-	get x() {
-		return this.vec2.y;
-	}
-	set x(value: number) {
-		this.vec2.y = value;
-	}
-}
-```
 
-Also good:
+    class Vec3 {
+    	@struct.substruct(Vec2) declare vec2: Vec2;
+    	@struct.f64 declare z: number;
 
-```ts
-import { struct } from 'thyseus';
+    	get x() {
+    		return this.vec2.x;
+    	}
+    	set x(value: number) {
+    		this.vec2.x = value;
+    	}
+    	get y() {
+    		return this.vec2.y;
+    	}
+    	set y(value: number) {
+    		this.vec2.y = value;
+    	}
+    }
+    ```
 
-@struct
-class Vec3 {
-	@struct.f64 declare x: number;
-	@struct.f64 declare y: number;
-	@struct.f64 declare z: number;
-}
+</Opinion>
 
-// These don't add additional fields, and so work totally fine!
-class Position extends Vec3 {}
-class Velocity extends Vec3 {}
-```
+<Opinion type="positive" title="Also good">
+	```ts
+	import { struct } from 'thyseus';
+
+    @struct
+    class Vec3 {
+    	@struct.f64 declare x: number;
+    	@struct.f64 declare y: number;
+    	@struct.f64 declare z: number;
+    }
+
+    // These don't add additional fields, and so work totally fine!
+    class Position extends Vec3 {}
+    class Velocity extends Vec3 {}
+    ```
+
+</Opinion>
 
 ## Zero-Sized Types (ZSTs)
 
-In some cases, you may want to add a special "tag" to entities for use in
-queries (e.g., `IsPlayer`), but have no additional data associated with that
-component. In these cases, you can use a **zero-sized type**. As the name likely
-implies, these are structs that take up no storage space.
+In some cases, you may want to add a "tag" to entities (e.g., `IsPlayer`) but
+have no additional data associated with that component. In these cases, you can
+use a **zero-sized type**. As the name implies, these are structs that require
+no space when stored.
 
 ```ts
 @struct
 class IsPlayer {}
 ```
 
-You can freely add ZSTs to entities like any other component! The only
-difference between a ZST and a "normal" component is that Thyseus will never
-construct a ZST to provide you a "handle" on these components, and so they
-cannot be queried for directly. But don't worry - they're still perfectly
-useable in queries!
+ZSTs can be added to and removed from entities just like any other component!
+The only difference between a ZST and a sized component is that ZSTs cannot be
+queried for directly, as Thyseus never actually constructs ZST instances. Fret
+not - they're still perfectly useable in queries!

@@ -7,10 +7,10 @@ import { Callout } from ':ui';
 # Custom System Parameters
 
 Thyseus' system parameters are designed so that it is simple to write your own.
-Nearly all logic surrounding parameters is contained within the parameters
-themselves rather than within the world, so just about anything Thyseus can do
-internally, you can do, too! System parameters start with system parameter
-**descriptors**.
+Parameters are responsible for declaring how they interact with other parameters
+and what data they need from the world - as a result, just about anything
+Thyseus can do internally, you can do, too! System parameters start with
+**system parameter descriptors**.
 
 ## What is a system parameter descriptor?
 
@@ -49,9 +49,9 @@ with each other, and if either returns true they are marked as intersecting.
 
 This method is called when a system is added by a `WorldBuilder` instance. It is
 called with the WorldBuilder that added it, and allows the descriptor to do
-whatever it may need with the builder - anything from adding systems or plugins,
-to registering components or other data. For some descriptors (e.g.,
-`WorldDescriptor`), this function may be a no-op.
+whatever it may need with the builder - anything from adding plugins to
+registering types. For some descriptors (e.g., `WorldDescriptor`), this function
+is a no-op.
 
 ### `intoArgument(world: World): any`
 
@@ -71,13 +71,12 @@ feel for how these methods might work.
 
 ### Construction
 
-First, we'll need a factory function that generates our descriptor objects.
-Internally, Thyseus implements these as classes, so that's what this example
-will use - however, there's no reason you cannot or should not use plain
-objects/closures if you prefer.
+First, we'll need a class that creates our descriptor objects. For parameter
+descriptors to work with the transformer, parameter descriptors must be
+implemented as classes, as the transformer will try to `new` them.
 
-For our first round of defining resources, we really just need to know the type
-(or class) of the resource:
+To get started with resources, we really just need to know the type (or class)
+of the resource:
 
 ```ts
 class ResourceDescriptor {
@@ -90,7 +89,7 @@ class ResourceDescriptor {
 
 That's a nice start! Let's try adding some descriptor methods.
 
-### Handling adding to systems
+### `onAddSystem` for Resources
 
 First, we need to know what the builder should do when it comes across this
 descriptor. Resources in Thyseus are a first-class concept, so all we'll need to
@@ -104,19 +103,19 @@ class ResourceDescriptor {
 }
 ```
 
-The builder knows what to do from there, so that's it for our responsibilities.
-Other descriptors may need to add systems to work correctly, or to register
-components, or to define thread message channels!
+The builder handles deduping types, so that's it for our responsibilities. Other
+descriptors may need to add systems to work correctly, or to register
+components, or more.
 
-### Resource thread locality
+### Resource Thread Locality
 
 Resources in Thyseus are allowed to be either mainthread-only or shareable
-across threads. Thyseus has a single model of shareable data - `Struct`s. If a
-class is correctly implemented as a `Struct`, then we should be able to share it
-across threads. If not, then we'll only be able to access the data from the main
+across threads. Thyseus allows shared data with `Struct`s; if a class is
+correctly implemented as a `Struct`, then we should be able to share it across
+threads. If not, then we'll only be able to access the data from the main
 thread.
 
-So how do we know a class is a struct? Well, we have an internal utility for
+So how do we know a class is a struct? Well, there's an internal utility for
 this:
 
 ```ts
@@ -129,8 +128,8 @@ function isStruct(val: unknown): val is Struct {
 }
 ```
 
-Structs are classes (functions) with static (numeric) `size` and `alignment`
-properties.
+Structs are very simple, from Thyseus' perspective - classes (functions) with
+static `size` and `alignment` properties.
 
 Okay! Now to use this in our descriptor class:
 

@@ -2,7 +2,7 @@
 title: Custom Executors
 ---
 
-import { Callout } from ':ui';
+import { Callout, Opinion } from ':ui';
 
 # Custom Executors
 
@@ -93,36 +93,36 @@ particularly useful for data structures backed by `SharedArrayBuffer`.
 This method depends entirely on the order in which values are created - it is
 imperative that you do not wrap `queue` in a context-specific conditional!
 
-Good:
-
-```ts
-class MyExecutor {
-	static fromWorld(
-		world: World,
-		systems: SystemDefinition[],
-		dependencies: (Dependencies | undefined)[],
-	) {
-		const myBuffer = world.threads.queue(() => world.createBuffer(8));
-		// ...
-	}
-}
-```
-
-Bad:
-
-```ts
-class MyExecutor {
-	static fromWorld(
-		world: World,
-		systems: SystemDefinition[],
-		dependencies: (Dependencies | undefined)[],
-	) {
-		if (world.threads.isMainThread) {
-			const myBuffer = world.threads.queue(() => world.createBuffer(8));
+<Opinion type="negative" title="bad">
+	```ts
+	class MyExecutor {
+		static fromWorld(
+			world: World,
+			systems: SystemDefinition[],
+			dependencies: (Dependencies | undefined)[],
+		) {
+			if (world.threads.isMainThread) {
+				const myBuffer = world.threads.queue(() => world.createBuffer(8));
+			}
 		}
 	}
-}
-```
+	```
+</Opinion>
+
+<Opinion type="positive" title="Good">
+	```ts
+	class MyExecutor {
+		static fromWorld(
+			world: World,
+			systems: SystemDefinition[],
+			dependencies: (Dependencies | undefined)[],
+		) {
+			const myBuffer = world.threads.queue(() => world.createBuffer(8));
+			// ...
+		}
+	}
+	```
+</Opinion>
 
 ## Executor Requirements & Guidelines
 

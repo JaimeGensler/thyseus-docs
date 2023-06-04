@@ -4,8 +4,8 @@ title: World Parameters
 
 # World
 
-On rare occasions, you may need access to the world itself. For this, you can
-type one of your system parameters as the `World`. In general, it is best to
+On rare occasions, you may need access to the `World` itself. For this reason,
+Thyseus also provides a `World` system parameter. In general, it is best to
 avoid accessing the world itself - most APIs that require direct access to the
 world are low-level and difficult to use correctly. Additionally, accessing the
 world creates a hard sync point when multithreading - no other system can run
@@ -24,8 +24,8 @@ async function mySystem(world: World) {
 }
 ```
 
-When you use the world system parameter, **you are guaranteed to always access
-the world from the main thread**. World instances constructed in threads do not
-have access to all data (e.g., mainthread-only resources) and do not have the
-ability to communicate with threads other than the main thread. Most world
-methods depend on being called only on the main thread!
+When your system requires access to the world, **you are guaranteed to always
+access the world from the main thread**. World instances constructed in threads
+do not have access to all data (e.g., mainthread-only resources) and do not have
+the ability to communicate with threads other than the main thread.
+Additionally, most world methods depend on being called only on the main thread!

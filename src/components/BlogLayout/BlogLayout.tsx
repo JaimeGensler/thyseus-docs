@@ -3,6 +3,7 @@ import { Article } from '../MDX';
 import { usePageOptions } from ':hooks';
 import { Header } from '../Header';
 import { Author } from './Author';
+import { Icon, Link } from ':ui';
 
 type Props = React.PropsWithChildren;
 export function BlogLayout({ children }: Props) {
@@ -15,8 +16,8 @@ export function BlogLayout({ children }: Props) {
 				id="main"
 				className="container mx-auto flex items-center flex-col gap-4"
 			>
-				<Article className="px-4 py-4">
-					{/* <div className="w-full mb-4">
+				<Article className="px-4 pt-4 pb-32">
+					<div className="w-full mb-4">
 						<Link className="group" href="/blog">
 							<Icon
 								type="chevron-right"
@@ -24,7 +25,7 @@ export function BlogLayout({ children }: Props) {
 							/>
 							<span>Back</span>
 						</Link>
-					</div> */}
+					</div>
 					<Article.Header>
 						<time
 							className="text-gray-300 text-sm mb-1"

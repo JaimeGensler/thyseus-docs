@@ -54,7 +54,7 @@ export function Header({ className, hideLogo = false }: Props) {
 					<nav className="hidden tablet:block">
 						<ul className="flex text-sm gap-2">
 							<NavItem href="/docs">Docs</NavItem>
-							<NavItem href="/blog/v0_12_release">Blog</NavItem>
+							<NavItem href="/blog">Blog</NavItem>
 						</ul>
 					</nav>
 					<Search className="hidden tablet:block" />

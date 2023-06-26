@@ -63,13 +63,12 @@ Of course, not all entities will live forever. You can use `Commands` or
 entities are not destroyed until the `applyCommands()` system runs**!
 
 ```ts
-function destroyEntity(commands: Commands) {
-	const entity = commands.spawn();
-
-	// If you have the `EntityCommands` object
-	entity.despawn();
-
-	// If you just have the id!
-	commands.despawn(entity.id);
+function destroyAllEntities(commands: Commands, allEntities: Query<Entity>) {
+	for (const entity of allEntities) {
+		// Use the whole entity
+		commands.despawn(entity);
+		// Or the id, if that's all you had
+		commands.despawnById(entity.id);
+	}
 }
 ```

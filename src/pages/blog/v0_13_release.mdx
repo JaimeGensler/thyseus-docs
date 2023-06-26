@@ -1,0 +1,121 @@
+---
+title: v0.13.0 Release
+date: '2023-06-25'
+author: jaime
+---
+
+# v0.13.0 Released
+
+Hello again! As promised, this update came a little quicker and is quite a bit
+smaller. This update centered around some internal cleanup and a more finalized
+API - unfortunately, this means it's a bit light on features and is mostly
+focused on breaking changes. Fortunately, there's not too many of them and
+migration strategies should be fairly clear. Let's take a look!
+
+## Global Types Changed
+
+This is a small adjustment for users of the global type injection - rather than
+having to import the global types into a particular file somewhere in your
+project, you can simply add them to your `tsconfig.json` instead!
+
+```json filename=tsconfig.json {4}
+{
+	"compilerOptions": {
+		// ...
+		"types": ["thyseus/global"]
+	}
+}
+```
+
+The previous `thyseus/types` import is no longer available.
+
+## Implicit Dependencies Removed
+
+Though nice in theory, implicit dependencies (e.g. `run(mySystem).last()`)
+create difficult-to-reason-about dependency graphs. While questions about how
+they should work are possible to resolve, they still encourage usage patterns
+that are unintuitive because they fundamentally _are_ unintuitive when
+considering more than the simplest cases. As a result, **implicit dependencies
+have been removed** - explicit dependencies or separate schedules are the
+recommended resolution.
+
+## `Commands` & `Entity` Reworked
+
+Allowing `Entity` to insert commands into the world was empowering in many ways,
+but came at the cost of making it difficult to determine which systems are
+actually capable of creating commands. As an even more unfortunate side-effect,
+it also meant that `Entity` could not be used as a substruct by other structs,
+as it needed an instance of a particular world's `Commands`. This update sees
+some changes to the API of both `Commands` and `Entity` so that they complement
+eachother.
+
+### Entity
+
+**The `Entity` component now only contains getters for id/index/generation.** As
+an upswing, `Entity` may safely be used in `@struct.substruct`, and some
+variation of `Entity.hasComponent()` will make a return in the future!
+
+### Commands
+
+Commands has seen some general improvements and bugfixes with this update. Most
+notably, **known no-op commands (e.g., adding components to despawned entities)
+are now ignored**, saving on space!
+
+`getEntityById` has been replaced with two new methods - `get()`, which accepts
+an instance of the `Entity` component and returns `EntityCommands`, and
+`getById()`, which accepts an entity id as before and returns `EntityCommands`.
+Similarly, `despawn()` also accepts an `Entity` object - if you only have an id,
+you can still use `despawnById()`!
+
+{/* prettier-ignore */}
+```ts
+function despawnDead(
+	query: Query<Entity, With<IsDead>>, 
+	commands: Commands
+) {
+	for (const entity of query) {
+		commands.despawn(entity);
+	}
+}
+```
+
+The `get()`, `getById()`, and `spawn()` methods also accept an optional argument
+`reuse`, which determines if the returned `EntityCommands` object is reused or
+recycled object. To make Thyseus easier to use, `EntityCommands` will _not_ be
+reused by default (`false`) and will create unique instances with every call.
+
+The `insertInto`, `insertTypeInto`, `removeFrom` methods have also been
+removed - these were of limited utility and required `Commands` to
+over-specialize.
+
+## Append-only WorldBuilder
+
+As mentioned in the previous update, `WorldBuilder`s should be treated as
+append-only. Despite this, we still allowed access to the internal data of
+`WorldBuilder`s. **In v0.13, almost all properties of `WorldBuilder` are
+`#private`.** Configuration and the worker URL can still be read, but not
+written. Of course, the methods you're used to are still available, and continue
+to be the correct way to handle type/system registration!
+
+## Struct Copy/Drop Reworked
+
+The internal mechanics of copying/dropping structs has been reworked - this only
+impacts you if you've handwritten structs. `copy()` is a required field on
+struct classes, while `drop()` is optional.
+
+## `Memory` flattened
+
+Previously, all binary views over Memory are available on the `Memory.views`
+object. `views` has been flattened into the `Memory` object, so typed arrays can
+be accessed directly with `Memory.u8`, `Memory.u16`, and so on.
+
+## What's Next?
+
+While this is a small update from the consumer side of things, a lot of cleanup
+was done internally to make Thyseus much more extensible and bug-free - it's not
+obvious now, but a lot of the work done for v0.13 will lay the necessary
+groundwork for exciting future features!
+
+As for the next update: Systems got a lot of love in the v0.12 release, and in a
+way Entities got some needed cleanup in this release, too! That just leaves the
+"C"... 👀

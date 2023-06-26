@@ -192,23 +192,6 @@ const myWorld = await World.new()
 	.build();
 ```
 
-You can also specify that a system should try to run _first_ or _last_:
-
-{/* prettier-ignore */}
-```ts {3,4}
-const myWorld = await World.new()
-	.addSystems(
-		run(updateTime).first(),
-		run(renderSystem).last(),
-	)
-	.build();
-```
-
-These are evaluated in the order passed, so, for example, the first system to
-specify `first` will be the "most" first. Explicit dependencies (`before`,
-`after`) take precedence over implicit, so you can still force a system to run
-before a `first` system.
-
 Contradictory dependencies like `run(A).after(A)` or
 `run(A).after(B), run(B).after(A)` will cause an error to be thrown when the
 world is built.

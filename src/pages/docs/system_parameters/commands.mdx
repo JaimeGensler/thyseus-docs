@@ -31,7 +31,7 @@ import { World, applyCommands, run } from 'thyseus';
 const world = await World.new()
 	.addSystems(
 		// ... All your systems here
-		run(applyCommands).last(),
+		applyCommands,
 	)
 	.build();
 ```
@@ -50,11 +50,11 @@ The `spawn()` method returns an `EntityCommands` object that can be used to
 insert additional commands for that entity - like adding or removing components.
 
 If you need to "reobtain" the `EntityCommands` for an entity, you can use
-`getEntityById()`:
+`get()`:
 
 ```ts
 function getHandle(commands: Commands, heldEntity: Res<HeldEntity>) {
-	const entityCommands = commands.getEntityById(heldEntity.id);
+	const entityCommands = commands.getById(heldEntity.id);
 }
 ```
 
@@ -101,7 +101,7 @@ function removePoison(
 	curedEvents: EventReader<Cured>
 ) {
 	for (const cured of curedEvents) {
-		commands.getEntityById(cured.entityId).remove(Poisoned);
+		commands.getById(cured.entityId).remove(Poisoned);
 	}
 }
 ```
@@ -116,7 +116,7 @@ function despawnEntities(
 	commands: Commands,
 ) {
 	for (const entity of entities) {
-		commands.despawn(entity.id);
+		commands.despawn(entity);
 	}
 }
 ```

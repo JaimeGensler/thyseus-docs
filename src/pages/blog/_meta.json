@@ -1,10 +1,16 @@
 {
 	"navigation": [
 		{
+			"path": "v0_13_release",
+			"title": "v0.13 Release",
+			"date": "2023-06-25",
+			"description": "Lots & lots of internal reorganization, API cleanup, bugs squashed, and more preparations for an exciting future."
+		},
+		{
 			"path": "v0_12_release",
 			"title": "v0.12 Release",
-			"date": "May 05, 2023",
-			"description": "Schedules, even simpler systems, a transformer plugin, and more - Thyseus' biggest and most exciting update yet"
+			"date": "2023-06-04",
+			"description": "Schedules, even simpler systems, a transformer plugin, and more - Thyseus' biggest and most exciting update yet!"
 		}
 	]
 }

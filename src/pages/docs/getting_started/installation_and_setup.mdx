@@ -141,11 +141,16 @@ ECS is a data-oriented paradigm and makes heavy use of types. Thyseus provides
 two way of accessing its types - direct imports from `'thyseus'`, or a global
 type injection. The choice of which to use is entirely up to you!
 
-If you'd like to use global type injection, you can add a `.d.ts` file with the
-following:
+If you'd like to use global type injection, you can add the following to your
+Typescript config:
 
-```ts filename="src/thyseusGlobals.d.ts"
-import 'thyseus/types';
+```json filename="src/tsconfig.json"
+{
+	"compilerOptions": {
+		// ...
+		"types": ["thyseus/global"]
+	}
+}
 ```
 
 If you'd rather not, types can simply be imported:

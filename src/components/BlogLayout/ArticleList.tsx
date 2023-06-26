@@ -23,7 +23,7 @@ export function ArticleList() {
 				</div>
 				<div className="px-2">
 					{articles.map(data => (
-						<Article {...data} />
+						<Article key={data.path} {...data} />
 					))}
 				</div>
 			</main>

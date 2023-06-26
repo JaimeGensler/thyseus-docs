@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Icon } from ':ui';
+import { Icon, Time } from ':ui';
 import { format, parseISO } from 'date-fns';
 
 export type Props = {
@@ -20,12 +20,10 @@ export function Article({ title, path, date, description }: Props) {
 				className="flex flex-col flex-grow mb-12 pl-8 px-4"
 				href={`/blog/${path}`}
 			>
-				<time
+				<Time
 					className="text-gray-400 text-sm -mt-[5px]"
 					dateTime={date}
-				>
-					{format(parseISO(date), 'MMMM do, yyyy')}
-				</time>
+				/>
 				<h2 className="text-2xl font-semibold text-white mt-3 mb-1 flex items-center gap-2">
 					<span>{title}</span>
 					<span className="hidden group-first:inline italic text-gray-400 text-xs">

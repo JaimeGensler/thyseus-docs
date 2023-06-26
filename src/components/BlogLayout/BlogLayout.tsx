@@ -1,9 +1,8 @@
-import { parseISO, format } from 'date-fns';
 import { Article } from '../MDX';
 import { usePageOptions } from ':hooks';
 import { Header } from '../Header';
 import { Author } from './Author';
-import { Icon, Link } from ':ui';
+import { Icon, Link, Time } from ':ui';
 
 type Props = React.PropsWithChildren;
 export function BlogLayout({ children }: Props) {
@@ -27,15 +26,10 @@ export function BlogLayout({ children }: Props) {
 						</Link>
 					</div>
 					<Article.Header>
-						<time
+						<Time
 							className="text-gray-300 text-sm mb-2"
 							dateTime={frontMatter.date}
-						>
-							{format(
-								parseISO(frontMatter.date),
-								'MMMM do, yyyy',
-							)}
-						</time>
+						/>
 						<Article.Title className="mb-3" />
 						<Author id={frontMatter.author} />
 					</Article.Header>

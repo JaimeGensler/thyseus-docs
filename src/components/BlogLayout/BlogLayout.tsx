@@ -28,7 +28,7 @@ export function BlogLayout({ children }: Props) {
 					</div>
 					<Article.Header>
 						<time
-							className="text-gray-300 text-sm mb-1"
+							className="text-gray-300 text-sm mb-2"
 							dateTime={frontMatter.date}
 						>
 							{format(
@@ -36,7 +36,7 @@ export function BlogLayout({ children }: Props) {
 								'MMMM do, yyyy',
 							)}
 						</time>
-						<Article.Title className="mb-2" />
+						<Article.Title className="mb-3" />
 						<Author id={frontMatter.author} />
 					</Article.Header>
 					{children}

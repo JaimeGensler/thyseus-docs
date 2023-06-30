@@ -102,7 +102,7 @@ another thread, sharing the same pointer in that thread:
 myInstance.grow();
 
 // ...some time later, in a different thread
-Memory.views.u8[myInstance.pointer];
+Memory.u8[myInstance.pointer];
 ```
 
 In the above case, the `pointer` on the class will be updated on the main
@@ -123,14 +123,13 @@ class MySafeDataStructure {
 	}
 
 	grow() {
-		const { u32 } = Memory.views;
-		const size = u32[(this.pointer + 4) >> 2];
+		const size = Memory.u32[(this.pointer + 4) >> 2];
 		// Realloc pointer at our pointer
-		u32[this.pointer >> 2] = Memory.realloc(
-			u32[this.pointer >> 2],
+		Memory.u32[this.pointer >> 2] = Memory.realloc(
+			Memory.u32[this.pointer >> 2],
 			size * 2,
 		);
-		u32[(this.pointer + 4) >> 2] = size * 2;
+		Memory.u32[(this.pointer + 4) >> 2] = size * 2;
 	}
 }
 ```
@@ -143,7 +142,7 @@ value at that pointer as a pointer itself.
 ```ts
 grow() {
 	Memory.reallocAt(this.pointer >> 2, size * 2);
-	Memory.views.u32[(this.pointer + 4) >> 2] = size * 2;
+	Memory.u32[(this.pointer + 4) >> 2] = size * 2;
 }
 ```
 
@@ -159,10 +158,11 @@ Now we're safely reallocating!
 </Callout>
 
 Now that you own a section of memory, you may read and write values from it. The
-`Memory.views` object exposes a view of every type over the entire buffer:
+`Memory` object exposes a view of every type over the entire buffer:
 
 ```ts
-type MemoryViews = {
+type Memory = {
+	// ...
 	buffer: ArrayBuffer;
 	u8: Uint8Array;
 	u16: Uint16Array;
@@ -178,8 +178,9 @@ type MemoryViews = {
 };
 ```
 
-The `Memory.views` object is guaranteed to be referentially stable for its
-entire lifetime, **but its members are currently not**.
+<Callout type="note">
+	Memory fields will be `null` until the memory has been initialized.
+</Callout>
 
 Because a pointer is a _byte_ offset in memory and typed array access uses
 _indexes_, you'll need to do a little pointer manipulation when accessing typed
@@ -190,10 +191,10 @@ simple as shifting bits:
 import { Memory } from 'thyseus';
 
 const myPointer = Memory.alloc(8);
-Memory.views.u8[myPointer]; // No need to shift for single byte vals!
-Memory.views.u16[myPointer >> 1]; // Shift right once
-Memory.views.u32[myPointer >> 2]; // Shift right twice
-Memory.views.u64[myPointer >> 3]; // Shift right thrice
+Memory.u8[myPointer]; // No need to shift for single byte vals!
+Memory.u16[myPointer >> 1]; // Shift right once
+Memory.u32[myPointer >> 2]; // Shift right twice
+Memory.u64[myPointer >> 3]; // Shift right thrice
 ```
 
 To access an offset of your pointer that you own, you can do pointer arithmetic.
@@ -202,8 +203,8 @@ To access an offset of your pointer that you own, you can do pointer arithmetic.
 import { Memory } from 'thyseus';
 
 const pointer = Memory.alloc(8);
-const firstU32 = Memory.views.u32[pointer >> 2];
-const secondU32 = Memory.views.u32[(pointer + 4) >> 2];
+const firstU32 = Memory.u32[pointer >> 2];
+const secondU32 = Memory.u32[(pointer + 4) >> 2];
 ```
 
 It is **your responsibility** to ensure that you are using pointers correctly

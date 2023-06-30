@@ -178,8 +178,9 @@ type Memory = {
 };
 ```
 
-The `Memory` object is guaranteed to be referentially stable for its entire
-lifetime, **but its members are currently not**.
+<Callout type="note">
+	Memory fields will be `null` until the memory has been initialized.
+</Callout>
 
 Because a pointer is a _byte_ offset in memory and typed array access uses
 _indexes_, you'll need to do a little pointer manipulation when accessing typed

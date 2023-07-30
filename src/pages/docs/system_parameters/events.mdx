@@ -31,7 +31,7 @@ import { struct } from 'thyseus';
 
 @struct
 class LevelUpEvent {
-	@struct.u32 declare level: number;
+	level: u32 = 0;
 }
 
 export function readLevelUpEvents(
@@ -78,7 +78,7 @@ import { struct } from 'thyseus';
 
 @struct
 class LevelUpEvent {
-	@struct.u32 declare level: number;
+	level: u32 = 0;
 }
 
 export function writeLevelUpEvents(levelUpEvents: EventWriter<LevelUpEvent>) {

@@ -14,29 +14,80 @@ an entity, such as `Transform`, `Health`, `Inventory`, `IsPlayer`, and anything
 else you need!
 
 Unlike GameObject/Component-based game architecture, **ECS components should not
-contain general _systems_ behavior**. However, Thyseus allows (and encourages!)
-components to contain functionality for common manipulations to their data.
+contain general _systems_ behavior**. However, Thyseus encourages components to
+contain functionality for common manipulations to their data.
 
 ## Writing Components
 
-Components represent types of data - what more natural way to write them than as
-classes? Specifically, components are classes decorated with the `@struct`
-decorator:
+Components are classes decorated with the `@struct` decorator:
 
 ```ts
 import { struct } from 'thyseus';
 
 @struct
 class Health {
-	@struct.u16 declare max: number;
-	@struct.u16 declare current: number;
+	max: number = 0;
+	current: number = 0;
 }
 ```
 
-Using the `@struct` and `@struct.<field>` decorators, we've defined a `Health`
-component with two fields - the `max` and the `current` health of the entity it
-belongs to. The `@struct.u16` decorator means that the property contains a `u16`
-value (short for _unsigned 16-bit integer_).
+The above defines a `Health` component with two fields - the `max` and `current`
+health of the entity it belongs to. We've also added initializers for the fields
+and given them an **explicit** type - field types in structs must be explicit!
+
+### Types
+
+Component fields must belong to a subset of types. The primitives:
+
+| Name    | Description                  | Size (bytes) | Alias  |
+| ------- | ---------------------------- | ------------ | ------ |
+| number  | Identical to `f64`           | 8            | -      |
+| boolean | `true` or `false`            | 1            | -      |
+| u8      | Unsigned 8-bit integer       | 1            | number |
+| u16     | Unsigned 16-bit integer      | 2            | number |
+| u32     | Unsigned 32-bit integer      | 4            | number |
+| u64     | Unsigned 64-bit integer      | 8            | bigint |
+| i8      | Signed 8-bit integer         | 1            | number |
+| i16     | Signed 16-bit integer        | 2            | number |
+| i32     | Signed 32-bit integer        | 4            | number |
+| i64     | Signed 64-bit integer        | 8            | bigint |
+| f32     | 32-bit Floating Point number | 4            | number |
+| f64     | 64-bit Floating Point number | 8            | number |
+
+`number` and `boolean` work as expected, but as shown components also allow
+other numeric types. If you're not used to working with multiple numeric types,
+don't worry; `number` is a fine choice getting started, it just may not always
+be the best fit!
+
+<Callout type="note">
+	When handling struct instances, numbers are typical double-precision
+	Javascript numbers. They are casted into their narrow type during
+	serialization, and will be observable after deserialization.
+</Callout>
+
+A more appropriate choice for our `Health` component might be `u32`:
+
+```ts
+import { struct } from 'thyseus';
+
+@struct
+class Health {
+	max: u32 = 0;
+	current: u32 = 0;
+}
+```
+
+More complex types are also permitted in structs, including strings, tuples
+(fixed-size same-type arrays) and _other structs_.
+
+```ts
+@struct
+class Player {
+	name: string;
+	color: [u8, u8, u8, u8]; // [r, g, b, a]
+	id: Entity; // The entity component
+}
+```
 
 ### Methods
 
@@ -50,268 +101,90 @@ import { struct } from 'thyseus';
 
 @struct
 class Health {
-	@struct.u16 declare max: number;
-	@struct.u16 declare current: number;
+	#max: u32 = 0;
+	#current: u32 = 0;
 
 	heal(amount: number) {
 		// Clamp to max!
-		this.current = Math.min(this.max, this.current + amount);
+		this.#current = Math.min(this.#max, this.#current + amount);
 	}
 
 	takeDamage(amount: number): boolean {
 		// Clamp to 0 to prevent integer underflow
-		this.current = Math.max(0, this.current - ammount);
+		this.#current = Math.max(0, this.#current - amount);
 		// Return a boolean indicating if this entity died!
-		return this.current === 0;
+		return this.#current === 0;
 	}
 }
 ```
 
 Great! Now instead of directly modifying `max` and `current`, we can just use
-the `heal()` and `takeDamage()` methods. This helps to keep our code dry, easily
-testable, and keeps the common functionality of `Health` in one place.
+the `heal()` and `takeDamage()` methods. Additionally, we've converted the
+fields to be `#` private, so that consumers must use methods to interact with
+this component. This helps to keep our code dry and easily testable, while
+keeping the core functionality of `Health` in one place.
 
-Note that the methods here describe operations on the data itself, and does not
-contain generalized behavior like an `update()` method. This `Health` component
-could be reasonably re-used by numerous, vastly different applications, because
-_how_ this component will be used is left to systems!
+### Constructors
 
-### Component Field Types
+You can provide constructors for your structs as well; the only requirement is
+that if you're using a struct as a component, **the constructor may not have any
+_required_ arguments**. If you're simply using it as a type for another struct,
+constructors may have required arguments.
 
-<Callout type="note">
-	For components to work correctly, component classes **must** be decorated
-	with `@struct`, and all properties **must** be decorated with a property
-	decorator!
-</Callout>
-
-Components allow granular control of your numeric types. While Javascript
-numbers must behave as
-[double precision 64-bit floating point numbers](https://en.wikipedia.org/wiki/Double-precision_floating-point_format),
-Thyseus allows you to declare more specifically what _kind_ of number a property
-is. The primitive types are all properties of `@struct`, and are listed below:
-
-| Name | Description                  | Size (bytes) | JS Type |
-| ---- | ---------------------------- | ------------ | ------- |
-| u8   | Unsigned 8-bit integer       | 1            | number  |
-| u16  | Unsigned 16-bit integer      | 2            | number  |
-| u32  | Unsigned 32-bit integer      | 4            | number  |
-| u64  | Unsigned 64-bit integer      | 8            | bigint  |
-| i8   | Signed 8-bit integer         | 1            | number  |
-| i16  | Signed 16-bit integer        | 2            | number  |
-| i32  | Signed 32-bit integer        | 4            | number  |
-| i64  | Signed 64-bit integer        | 8            | bigint  |
-| f32  | 32-bit Floating Point number | 4            | number  |
-| f64  | 64-bit Floating Point number | 8            | number  |
-| bool | Boolean (`true`/`false`)     | 1            | boolean |
-
-If you're not used to working with different numeric types, don't worry -
-`@struct.f64` works like the Javascript numbers you're used to, and is a fine
-choice getting started! It just may not always be the best fit.
-
-## Constructors
-
-You may provide a constructor for your structs, provided you pass `this` to the
-`initStruct` function first - similar to calling `super()` in subclasses.
-
-```ts {8-14}
-import { struct, initStruct } from 'thyseus';
+```ts {8-11}
+import { struct } from 'thyseus';
 
 @struct
 class Health {
-	@struct.u16 declare max: number;
-	@struct.u16 declare current: number;
+	max: u32;
+	current: u32;
 
 	constructor(max = 100, current = max) {
-		// You must call initStruct before accessing fields!
-		initStruct(this);
-
 		this.max = max;
 		this.current = current;
 	}
 }
 ```
 
-**Constructors may not have any required arguments**. You can use this feature
-to set default values of components when adding them to entities - for example,
-in the above case, if you add the `Health` component to an entity without
-specifying a `current` and `max` value, both will be set to 100.
+Constructors can also be used to set default values - in the above case, if you
+adding the `Health` component by type will set both `current` and `max` to 100.
 
-### Avoiding Construction
+### Inheritance
 
-In general, it is best to **avoid constructing components yourself** (e.g.
-`new Health()`).
-
-Thyseus takes responsibility for the lifetime of objects that it creates;
-however, **if you call a constructor yourself, you become responsible for
-cleaning up that struct instance when it is no longer used.** Instances you own
-must call the `dropStruct()` function when they go out of scope. If you need a
-local component instance, consider using
-[system resources](/docs/system_parameters/system_resources).
-
-<Opinion type="negative" title="Bad (will cause a memory leak)">
-	```ts {4}
-	import { Position } from './components';
-
-    function spawnEntities(commands: Commands) {
-    	commands.spawn().add(new Position(1, 2, 3));
-    }
-    ```
-
-</Opinion>
-
-<Opinion type="positive" title="Good">
-	```ts
-	import { dropStruct } from 'thyseus';
-	import { Position } from './components';
-
-    function spawnEntities(commands: Commands) {
-    	const position = new Position(1, 2, 3);
-    	commands.spawn().add(position);
-    	dropStruct(position);
-    }
-    ```
-
-</Opinion>
-
-<Opinion type="positive" title="Best">
-	```ts {3}
-	import { Position } from './components'
-
-    function spawnEntities(
-    	commands: Commands,
-    	pos: SystemRes<Position>
-    ) {
-    	pos.set(1, 2, 3);
-    	commands.spawn().add(pos);
-    	// Thyseus owns pos, so you don't need to drop it here
-    }
-    ```
-
-</Opinion>
-
-## Non-primitive fields
-
-While primitives will work for many cases, sometimes you need more complex
-types. Thyseus provides three decorators for complex types out of the box.
-
-### `@struct.string`
+Like any other Javascript class, you may also extend structs.
 
 ```ts
 @struct
-class MyStruct {
-	@struct.string declare str: string;
+class Vec3 {
+	x: f64;
+	y: f64;
+	z: f64;
 }
+
+class Position extends Vec3 {}
+class Velocity extends Vec3 {}
 ```
 
-The `@struct.string` decorator looks like a primitive decorator, but is
-considered complex because dynamically sized strings require dynamic allocation.
-You can get and set Javascript strings as you'd expect with this decorator!
-
-### `@struct.array()`
+If you'd like to add fields to the extended class, just make sure to decorate
+the class again!
 
 ```ts
 @struct
-class MyStruct {
-	@struct.array({ type: 'u8', length: 4 }) declare arr: Uint8Array;
-	@struct.array({ type: 'f32', length: 16 }) declare str2: Float32Array;
-}
-```
-
-This decorator allows you to specify a typed array as a property. It accepts an
-options object containing `{ type: PrimitiveType, length: number}`. Type is one
-of the numeric primitive types listed above (`'u8'`, `u16`, etc.) and length is
-the number of elements the array contains.
-
-### `@struct.substruct()`
-
-```ts
-@struct
-class RGB {
-	@struct.u8 declare r: number;
-	@struct.u8 declare g: number;
-	@struct.u8 declare b: number;
+class Vec2 {
+	x: f64;
+	y: f64;
 }
 
 @struct
-class RGBA {
-	@struct.substruct(RGB) declare rgb: RGB;
-	@struct.u8 declare a: number;
+class Vec3 extends Vec2 {
+	z: f64;
+}
+
+@struct
+class Vec4 extends Vec3 {
+	w: f64;
 }
 ```
-
-This decorator allows you to nest structs within structs. It accepts a struct
-class to be a member of a struct, and will return an instance of that struct.
-
-## Extending Structs
-
-For the most part, `@struct`-decorated classes will work just like any other
-Javascript class. However, **extending structs only works so long as you do not
-add additional fields**. If you'd like to extend a component with new fields,
-you'll need to instead use the `@struct.substruct` decorator.
-
-<Opinion type="negative" title="Bad, will not work as expected">
-	```ts
-	@struct
-	class Vec2 {
-		@struct.f64 declare x: number;
-		@struct.f64 declare y: number;
-	}
-
-    @struct
-    class Vec3 extends Vec2 {
-    	// We cannot extend structs with new fields!
-    	@struct.f64 declare z: number;
-    }
-    ```
-
-</Opinion>
-
-<Opinion type="positive" title="Good">
-	```ts
-	@struct
-	class Vec2 {
-		@struct.f64 declare x: number;
-		@struct.f64 declare y: number;
-	}
-
-    class Vec3 {
-    	@struct.substruct(Vec2) declare vec2: Vec2;
-    	@struct.f64 declare z: number;
-
-    	get x() {
-    		return this.vec2.x;
-    	}
-    	set x(value: number) {
-    		this.vec2.x = value;
-    	}
-    	get y() {
-    		return this.vec2.y;
-    	}
-    	set y(value: number) {
-    		this.vec2.y = value;
-    	}
-    }
-    ```
-
-</Opinion>
-
-<Opinion type="positive" title="Also good">
-	```ts
-	import { struct } from 'thyseus';
-
-    @struct
-    class Vec3 {
-    	@struct.f64 declare x: number;
-    	@struct.f64 declare y: number;
-    	@struct.f64 declare z: number;
-    }
-
-    // These don't add additional fields, and so work totally fine!
-    class Position extends Vec3 {}
-    class Velocity extends Vec3 {}
-    ```
-
-</Opinion>
 
 ## Zero-Sized Types (ZSTs)
 

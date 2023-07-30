@@ -298,7 +298,7 @@ class ResourceDescriptor<T extends Class | Mut<Class>> {
 
 Next, we'll go into how to let the transformer recognize your parameter.
 
-## Transforming system parameters
+## Transforming System Parameters
 
 The transformer plugin accepts config that allows you to register additional
 system parameter types for it to recognize. Using the config, we can tell the
@@ -352,23 +352,19 @@ function mySystem(res: Res) {}
 import { ResourceDescriptor } from 'thyseus/descriptors';
 
 function mySystem(res: Res) {}
-mySystem.parameters = [ResourceDescriptor()];
+mySystem.parameters = [new ResourceDescriptor()];
 ```
 
-As you may have noticed, `ResourceDescriptor()` is treated like a function call,
-_not_ a constructor! If you choose to implement system parameters as a class,
-you'll need to provide a function that calls that class's constructor.
-
-You also may be realizing that `Res` as provided by Thyseus is generic - in
-fact, it has to be in order to work correctly! When system parameters accept
-generics, those are passed as arguments to the parameter descriptor function.
+You may have noticed that `Res` as provided by Thyseus is generic - in fact, it
+has to be in order to work correctly! When system parameters accept generics,
+those are passed as arguments to the parameter descriptor function.
 
 ```ts
-// Untransformed code
+// === Untransformed code
 class MyResource {}
 function mySystem(res: Res<MyResource>) {}
 
-// Transformed!
+// === Transformed!
 import { ResourceDescriptor } from 'thyseus/descriptors';
 
 class MyResource {}
@@ -378,4 +374,5 @@ mySystem.parameters = [ResourceDescriptor(MyResource)];
 ```
 
 It is up to you to validate that the types provided to your system parameter and
-the arguments provided to your descriptor are correct!
+the arguments provided to your descriptor are correct, both at the type level
+and at runtime.

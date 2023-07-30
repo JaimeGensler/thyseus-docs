@@ -17,60 +17,39 @@ export function Components() {
 				<span style={{ color: 'var(--shiki-color-text)' }}> {'{'}</span>
 			</span>
 			<span className="block">
-				<span style={{ color: 'var(--shiki-color-text)' }}>
-					{'\t'}@
+				<span style={{ color: 'var(--shiki-color-text);' }}>
+					{'\t'}x
 				</span>
-				<span style={{ color: 'var(--shiki-token-constant)' }}>
-					struct
-				</span>
-				<span style={{ color: 'var(--shiki-color-text)' }}>.f64 </span>
-				<span style={{ color: 'var(--shiki-token-keyword)' }}>
-					declare
-				</span>
-				<span style={{ color: 'var(--shiki-color-text)' }}> x</span>
-				<span style={{ color: 'var(--shiki-token-keyword)' }}>:</span>
-				<span style={{ color: 'var(--shiki-color-text)' }}> </span>
+				<span style={{ color: 'var(--shiki-token-keyword)' }}>: </span>
 				<span style={{ color: 'var(--shiki-token-constant)' }}>
 					number
 				</span>
+				<span style={{ color: 'var(--shiki-token-keyword)' }}> = </span>
+				<span style={{ color: 'var(--shiki-token-constant)' }}>0</span>
 				<span style={{ color: 'var(--shiki-color-text)' }}>;</span>
 			</span>
 			<span className="block">
-				<span style={{ color: 'var(--shiki-color-text)' }}>
-					{'\t'}@
+				<span style={{ color: 'var(--shiki-color-text);' }}>
+					{'\t'}y
 				</span>
-				<span style={{ color: 'var(--shiki-token-constant)' }}>
-					struct
-				</span>
-				<span style={{ color: 'var(--shiki-color-text)' }}>.f64 </span>
-				<span style={{ color: 'var(--shiki-token-keyword)' }}>
-					declare
-				</span>
-				<span style={{ color: 'var(--shiki-color-text)' }}> y</span>
-				<span style={{ color: 'var(--shiki-token-keyword)' }}>:</span>
-				<span style={{ color: 'var(--shiki-color-text)' }}> </span>
+				<span style={{ color: 'var(--shiki-token-keyword)' }}>: </span>
 				<span style={{ color: 'var(--shiki-token-constant)' }}>
 					number
 				</span>
+				<span style={{ color: 'var(--shiki-token-keyword)' }}> = </span>
+				<span style={{ color: 'var(--shiki-token-constant)' }}>0</span>
 				<span style={{ color: 'var(--shiki-color-text)' }}>;</span>
 			</span>
 			<span className="block">
-				<span style={{ color: 'var(--shiki-color-text)' }}>
-					{'\t'}@
+				<span style={{ color: 'var(--shiki-color-text);' }}>
+					{'\t'}z
 				</span>
-				<span style={{ color: 'var(--shiki-token-constant)' }}>
-					struct
-				</span>
-				<span style={{ color: 'var(--shiki-color-text)' }}>.f64 </span>
-				<span style={{ color: 'var(--shiki-token-keyword)' }}>
-					declare
-				</span>
-				<span style={{ color: 'var(--shiki-color-text)' }}> z</span>
-				<span style={{ color: 'var(--shiki-token-keyword)' }}>:</span>
-				<span style={{ color: 'var(--shiki-color-text)' }}> </span>
+				<span style={{ color: 'var(--shiki-token-keyword)' }}>: </span>
 				<span style={{ color: 'var(--shiki-token-constant)' }}>
 					number
 				</span>
+				<span style={{ color: 'var(--shiki-token-keyword)' }}> = </span>
+				<span style={{ color: 'var(--shiki-token-constant)' }}>0</span>
 				<span style={{ color: 'var(--shiki-color-text)' }}>;</span>
 			</span>
 			<span className="block">

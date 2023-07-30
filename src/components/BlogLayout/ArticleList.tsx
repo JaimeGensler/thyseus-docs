@@ -21,7 +21,7 @@ export function ArticleList() {
 						Latest Blog Posts
 					</h1>
 				</div>
-				<div className="px-2">
+				<div className="px-2 pb-16">
 					{articles.map(data => (
 						<Article key={data.path} {...data} />
 					))}

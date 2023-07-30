@@ -1,6 +1,12 @@
 {
 	"navigation": [
 		{
+			"path": "v0_14_release",
+			"title": "v0.14 Release",
+			"date": "2023-07-30",
+			"description": "You're going to want to check this one out."
+		},
+		{
 			"path": "v0_13_release",
 			"title": "v0.13 Release",
 			"date": "2023-06-25",

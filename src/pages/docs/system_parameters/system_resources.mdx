@@ -15,7 +15,7 @@ import { struct } from 'thyseus';
 
 @struct
 class A {
-	@struct.u32 declare value: number;
+	value: u32 = 0;
 }
 
 function mySystem(a1: Res<A>, a2: Res<A>) {

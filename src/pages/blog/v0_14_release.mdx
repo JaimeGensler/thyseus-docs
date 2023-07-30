@@ -1,0 +1,270 @@
+---
+title: v0.14.0 Release
+date: '2023-07-30'
+author: jaime
+---
+
+# v0.14.0 Released
+
+I'm back with what is quite likely my personal favorite update to Thyseus! This
+time around, we're introducing a more readable API, performance improvements,
+some new highly-requested features, and less code both for you to write _and_ in
+the core library. Did I mention these were all the same change?
+
+## Serialized Structs
+
+Structs (i.e., components) were fast becoming the largest weakpoint in Thyseus's
+API. Representing components as classes has a lot of upsides, but `@struct` has
+started to feel a bit like a minefield with the numerous conditions on how and
+when they can be used. To name some of their limitations:
+
+-   Typescript users have to provide type information twice (once with
+    `@struct`, once with TS types).
+-   The permitted field types are very limited.
+-   Classes can't be meaningfully extended.
+-   You have to handle custom initialization (`initStruct()`).
+-   Lifetimes have to be considered when you create instances (`dropStruct()`).
+-   There are many cases where you can't even construct them.
+
+This is far from the developer experience we're trying to provide. In an ideal
+world, components in a Typescript ECS should just be classes like any other, no
+caveats or gotchas.
+
+**So, why not?**
+
+```ts
+import { struct } from 'thyseus';
+
+@struct
+class Vec3 {
+	x: number = 0;
+	y: number = 0;
+	z: number = 0;
+}
+```
+
+Decorate a class with `@struct`, type your fields, and you're done. ✨
+
+This new API is made possible by the Thyseus transformer. The decorator is a
+no-op that gets stripped from builds; it's only needed to let the transformer
+know to apply transformations. As a bonus, the `@struct` decorator is now
+overloaded and can work as either a legacy decorator _or_ a new ES decorator -
+go ahead and remove `"experimentalDecorators": true`.
+
+Behind this new API is a fundamental change to the way structs work. Rather than
+using accessors and read/writing directly to Thyseus's `Memory`, **structs are
+now just normal objects with normal properties**. The transformer doesn't touch
+the core functionality of the class, but merely adds a few extra properties that
+Thyseus needs like size, alignment, and how to serialize/deserialize the type.
+
+Thanks to some clever tricks applied in systems, this approach is equivalent in
+performance to _handwriting_ structs (e.g., without decorators) in previous
+versions of Thyseus, which is usually anywhere from ~1.5 to 15x faster than
+decorated structs. Better yet, the serialization model unlocks a _ton_ of
+potential for structs.
+
+That's right - we're just getting started.
+
+### Types
+
+The new struct API allows the same fine-grain control over types as the previous
+API. Thyseus exports all the numeric types you're used to - the types themselves
+are just aliases for `number` (or `bigint` in the case of `u64`/`i64`), but the
+transformer will use the narrower type for serialization. It also permits the
+use of plain ol' `number`, which functions identically to `f64`.
+
+```ts
+@struct
+class SomePrimitives {
+	a: u8;
+	b: i16;
+	c: u32;
+	d: f64;
+	e: number; // Same as f64
+	f: boolean; // Booleans still allowed, of course!
+}
+```
+
+The previous complex types are still around in some form as well, with
+`string`s, tuples (fixed-size same-type arrays), and other structs!
+
+```ts
+@struct
+class Player {
+	name: string; // Normal string type
+	color: [u8, u8, u8, u8]; // [r, g, b, a]
+	id: Entity; // The entity component
+}
+```
+
+Neat! How about some **new types**, too? Maybe something dynamic... like arrays?
+
+```ts
+@struct
+class SomeComponent {
+	myArray: f32[]; // Array<f32> is also permitted!
+}
+```
+
+No custom abstraction or wrapper over every access, just the Javascript arrays
+you're used to. Currently, arrays are restricted to same-type numerics for
+elements, but unlike tuples they can have a variable number of elements in them.
+
+Serialization opens the door to all of this. For the first iteration, the focus
+has been on retaining old functionality and introducing just a couple
+highly-requested features. In the future, we'll extend the available types;
+pretty much anything you can safely serialize & deserialize is possible, so feel
+free to start making feature requests!
+
+### Construction & Destruction
+
+In previous versions of Thyseus, structs had to call `initStruct()` in the
+constructor to perform some setup. They also couldn't be constructed in module
+scope if you needed a local instance - if you tried this, you probably saw an
+error about how `Memory` needed to be initialized. By far the worst of all,
+structs required consumers to be familiar with the idea of lifetimes and to
+consider when to call `dropStruct()`.
+
+With serialization, none of this is necessary - **`initStruct()` and
+`dropStruct()` have been removed**. You can create instances whenever you want,
+and because instances are just normal objects you can forget about lifetimes!
+
+You can also specify default values without a constructor:
+
+```ts
+@struct
+class Vec3 {
+	// Define defaults here, if you'd like!
+	x: f64 = 0;
+	y: f64 = 0;
+	z: f64 = 0;
+}
+```
+
+Note that because fields are now plain object properties, you will see
+Typescript errors if you don't provide _some_ form of field initialization for
+your structs.
+
+The only requirement left is that if a struct is being used directly as a
+component or resource, its constructor's arguments must still be optional
+(Thyseus needs to construct instances somehow, after all). However, if you're
+only using the struct as a substruct, it _can_ have required constructor
+arguments.
+
+### Inheritance
+
+Inheritance needs some love, too. To recap, previously extension was permitted
+so long as new fields weren't added. We can do better though; with
+serialization, **extension is permitted without restriction**.
+
+```ts
+import { struct } from 'thyseus';
+
+@struct
+class Vec2 {
+	x: f64;
+	y: f64;
+}
+@struct
+class Vec3 extends Vec2 {
+	z: f64;
+}
+@struct
+class Vec4 extends Vec3 {
+	w: f64;
+}
+
+class Quat extends Vec4 {}
+```
+
+If you add fields to an extended class, you'll still need to decorate it with
+`@struct`. If you don't add fields, the decorator is optional.
+
+### Usage Notes
+
+Here's some general usage notes to keep in mind:
+
+-   (Throws) All fields on `@struct` classes **must define explicit types**,
+    even if they assign a default value.
+-   (Throws) Types not mentioned above (or in the docs) **are not permitted**.
+    This includes aliases, similar to system parameters.
+-   (Silent) `static`, `readonly`, `declare`, `abstract`, and accessor fields
+    are ignored.
+-   (Silent) Classes decorated with `@struct` will have `serialize()`,
+    `deserialize()`, `static size`, `static alignment`, and `static drop()`
+    properties overridden if they exist.
+    -   You may add placeholder values for these and use the
+        transformer-generated properties in your own code if needed.
+
+### Under The Hood
+
+As mentioned, this is all powered by the transformer. The transformer reads the
+types of your struct properties and generates efficient
+serialization/deserialization methods for structs based on those properties.
+This allows the same powerful control over Memory that we're used to while also
+enabling the use of Javascript types
+
+In order to achieve the best performance possible, the transformer also must
+assume the responsibility of _creating_ serialization calls. Queries allow for
+variable numbers and types of elements, which is difficult for VMs to optimize.
+To fix this, the transformer adds in `deserialize()` calls at the beginning and
+`serialize()` calls at the end of your `for...of` loops (for `Query` and
+`EventReader`/`EventWriter`). Within a system, these calls are always the same,
+allowing VMs to be clever and generate highly efficient code. Similarly, for
+resources and system resources the transformer simply inserts the deserialize
+and serialize calls at the beginning and end of systems.
+
+As an added bonus to all of this, structs aren't turned into anonymous classes,
+meaning you should be able to find the names of them much more easily when
+debugging.
+
+## Other Changes
+
+### Events
+
+`EventWriter.create()` has been modified to have the same API as
+`EventWriter.createFrom()`, and `EventWriter.createFrom()` has been removed.
+Serialization simply makes returning mutable instances less useful as a pattern.
+It's still perfectly acceptable to recycle instances - feel free to handle it
+locally!
+
+Events have also been reworked to use 50% less memory (from the `Memory` API)
+for their internal metadata.
+
+### Commands
+
+Commands have been reworked to differentiate `Add` and `AddType` commands when
+storing command queues, resulting in a significant reduction in the memory
+needed to store `AddType` commands.
+
+### Queries
+
+The `forEach()` method on queries has been removed - having multiple methods of
+iteration adds little value in this case and increases the surface area of code
+we have to maintain.
+
+## A Note On Javascript Support
+
+Type information is - and always has been - a core part of the API. When
+designing the "canonical" way to develop with Thyseus, it makes the most sense
+to simply lean into the power of Typescript's type system, rather than creating
+unfamiliar, more verbose, and less useful ways of describing types. Ultimately,
+this should provide the best DX and allow us to leverage compiler optimizations
+to make Thyseus as fast as possible.
+
+That said, we'd still like to provide a path forward for those that wish to use
+Thyseus without Typescript. Given Thyseus is more-or-less a one-person effort
+right now, this isn't as much of a priority; however, it _is_ on the roadmap,
+and contributions on this front are more than welcome!
+
+## What's Next?
+
+While these changes should work without issue in their current state, some tech
+debt was taken on in order to get this into your hands quicker. The next focus
+will be on resolving some of this debt, including migrating to a monorepo and
+cleaning up the internals of the transformer to be more flexible (such as
+allowing aliases and better configuration). This should improve velocity &
+stability moving forward. Some other miscellaneous reworks are likely to make it
+into the next update - and of course, feature requests are always welcome!
+
+Cheers, and until next time!

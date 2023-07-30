@@ -24,10 +24,10 @@ import { struct } from 'thyseus';
 // Systems using this resource could be called from any thread
 @struct
 class Time {
-	@struct.f64 declare previous: number;
-	@struct.f64 declare current: number;
-	@struct.f64 declare delta: number;
-	@struct.u32 declare frameNumber: number;
+	previous: f64 = 0;
+	current: f64 = 0;
+	delta: f64 = 0;
+	frameNumber: u32 = 0;
 }
 
 // Systems using this resource will only be called from the main thread
@@ -80,10 +80,10 @@ import { struct } from 'thyseus';
 
 @struct
 class Keyboard {
-	@struct.bool declare W: boolean;
-	@struct.bool declare A: boolean;
-	@struct.bool declare S: boolean;
-	@struct.bool declare D: boolean;
+	W: boolean = false;
+	A: boolean = false;
+	S: boolean = false;
+	D: boolean = false;
 }
 ```
 
@@ -98,10 +98,10 @@ import { struct, type World } from 'thyseus';
 
 @struct
 class Keyboard {
-	@struct.bool declare W: boolean;
-	@struct.bool declare A: boolean;
-	@struct.bool declare S: boolean;
-	@struct.bool declare D: boolean;
+	W: boolean = false;
+	A: boolean = false;
+	S: boolean = false;
+	D: boolean = false;
 
 	// This will be called once, on the main thread, while the world is being built.
 	initialize(world: World) {

@@ -7,13 +7,11 @@ export function CodeSnippets() {
 	return (
 		<div className="grid grid-cols-1 desktop:grid-cols-2 gap-16 px-2">
 			<Code href="/docs/core_concepts/components" snippet={Components}>
-				<span>Components</span>
-				{' as '}
+				<span>Components as </span>
 				<span className="text-[#e5c07b]">classes</span>
 			</Code>
 			<Code href="/docs/core_concepts/systems" snippet={Systems}>
-				<span>Systems</span>
-				{' as '}
+				<span>Systems as </span>
 				<span className="text-[#61afef]">functions</span>
 			</Code>
 		</div>

@@ -142,45 +142,17 @@ items.
 function yourSystem(query: Query<A, Or<With<B>, With<C>>>) {}
 ```
 
-### Filter Simplification & Impossible Queries
+### Impossible Queries
 
-When queries are created, they will look for impossible conditions and remove
-them from the list of potential match patterns in a "simplification" process.
-After simplification, if there are no potential match patterns, you have created
-an impossible query and an error will be thrown. For example:
+When queries are created, they will throw an error if it is logically impossible
+for them to match any entity. For example, the following query will throw an
+error:
 
 ```ts
 function yourSystem(query: Query<A, Without<A>>) {}
 ```
 
-The above query requires an entity to both have A and to _not_ have A. Because
-there is no possible way for this query to match entities, an error will be
-thrown when the query is built.
-
-Let's consider a slightly more complex query that simplifies but does not throw:
-
-{/* prettier-ignore */}
-```ts
-function yourSystem(query: Query<
-	_,
-	[
-		Or<With<A>, With<B>>,
-		Or<Without<A>, Without<B>>
-	]
->) {}
-```
-
-Strictly speaking, there are four possible ways an entity could match this
-query:
-
--   (A && !A) - The entity has **A** and does not have **A**.
--   (A && !B) - The entity has **A** and does not have **B**.
--   (B && !A) - The entity has **B** and does not have **A**.
--   (B && !B) - The entity has **B** and does not have **B**.
-
-Conditions 1 and 4 are impossible and so will be removed from the query matching
-process, leaving us with two possible conditions to check. In this case, no
-error will be thrown. In general, it is suggested that you write queries as
-clearly as possible so as not to take advantage of simplification, but this
-behavior is available if for whatever reason it is the best/only way to write a
-query.
+Note that queries cannot detect if they cannot match any entity merely by
+_convention_. For example, if you query for `A` and `B` but there is no
+mechanism in your application by which both `A` and `B` can be added to an
+entity, the query will not be able to detect this and no error will be thrown.

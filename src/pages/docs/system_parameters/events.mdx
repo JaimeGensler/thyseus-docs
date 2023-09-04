@@ -60,18 +60,18 @@ export function readLevelUpEvents(
 
 ## `EventWriter`
 
-`EventWriter`s are responsible for adding events to the queue. There are three
-provided methods of doing so:
+`EventWriter` inherits all functionality of `EventReader`, and is also
+responsible for adding events to the queue. There are two provided methods of
+doing so:
 
 -   `createDefault(): void` adds an element to the queue with the default data
     for that struct.
--   `create(): T` adds an element to the queue and returns a handle to that
-    element for you to mutate.
--   `createFrom(instance: T): void` copies the data from passed instance of the
-    struct into the queue.
+-   `create(value: T): void` immediately copies the data from the passed
+    instance of the struct into the queue. **The passed `value` must be an
+    instance of the class**.
 
-`EventWriter`s also have a `clearImmediate()` method that immediately clears all
-events in the queue.
+`EventWriter`s can also call `clearImmediate()` to immediately remove all events
+from the queue.
 
 ```ts
 import { struct } from 'thyseus';
@@ -94,8 +94,6 @@ export function writeLevelUpEvents(levelUpEvents: EventWriter<LevelUpEvent>) {
 	console.log(levelUpEvents.length); // -> 0
 }
 ```
-
-`EventWriter` also inherits all the functionality of `EventReader`!
 
 ## Parallelism
 

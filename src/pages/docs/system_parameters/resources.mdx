@@ -7,21 +7,21 @@ import { Callout } from ':ui';
 # Resources
 
 Resources are world-unique data that exist for the entire lifetime of the world.
-This means that, unlike components, they are not tied to a specific entity.
-Resources are the ideal way to handle things like time (frame number, delta,
-etc.), renderers, inputs, and other data that is unique to a world.
+Unlike components, they are not tied to a specific entity. Resources can
+elegantly handle things like time (frame number, delta, etc.), renderers,
+inputs, and other data that is unique to a world rather than an entity.
 
 ## Defining resources
 
-Like components, resources are classes. Unlike components, they _can_ be, but
-are not required to be, decorated with `@struct`. Resources decorated with
-`@struct` will be accessible from any thread, while resources that are not will
-only be accessible on the main thread.
+Resources are modeled as classes. Unlike components, they _can_ be, but are not
+required to be, decorated with `@struct`. Resources decorated with `@struct`
+will be accessible from any thread, while resources that are not will only be
+accessible on the main thread.
 
 ```ts
 import { struct } from 'thyseus';
 
-// Systems using this resource could be called from any thread
+// This resource can be accessed from any thread
 @struct
 class Time {
 	previous: f64 = 0;
@@ -30,7 +30,7 @@ class Time {
 	frameNumber: u32 = 0;
 }
 
-// Systems using this resource will only be called from the main thread
+// This resource can only be accessed from the main thread
 class Renderer {
 	draw() {
 		// ...

@@ -204,21 +204,22 @@ change the implementation details of a piece of functionality without changing
 the external API.
 
 ```ts
-import { CoreSchedule, World } from 'thyseus';
+import { World } from 'thyseus';
 import {
 	applyForces,
 	detectCollisions,
 	resolveCollisions,
 } from './physicsSystems';
 
-function myPlugin(builder: WorldBuilder) {
+const FixedUpdateSchedule = Symbol();
+function physicsPlugin(builder: WorldBuilder) {
 	builder.addSystems(
-		CoreSchedule.FixedTimeStep,
+		FixedUpdateSchedule,
 		applyForces,
 		detectCollisions,
 		resolveCollisions,
 	);
 }
 
-const world = await World.new().addPlugin(myPlugin).build();
+const world = await World.new().addPlugin(physicsPlugin).build();
 ```

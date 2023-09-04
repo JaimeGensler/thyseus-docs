@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { Icon, Time } from ':ui';
-import { format, parseISO } from 'date-fns';
 
 export type Props = {
 	path: string;

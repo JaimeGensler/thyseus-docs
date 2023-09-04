@@ -6,13 +6,10 @@ any pull requests.
 
 ## Pull Requests
 
-_**Corrections and issues requesting clarification are welcome at any point;
-please - ask first before starting new pages/sections.**_ As Thyseus is
-currently pre-1.0 release, there are sometimes changes that make old docs
-innacurate, and the last thing I want is for you to spend time helping, just for
-it to no longer be relevent with a new release! If you'd like to contribute new
-docs sections/pages, feel free to ping me or create an issue and I'll respond as
-soon as I'm able to.
+Corrections and issues requesting clarification are always welcome; **please ask
+first before creating new pages/sections.** As Thyseus is currently pre-1.0
+release, behavior may change, especially if it's undocumented. If you'd like to
+contribute _new_ sections/pages, please create an issue first.
 
 ## General Guidelines
 

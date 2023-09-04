@@ -1,15 +1,32 @@
 ---
 title: v0.14.0 Release
-date: '2023-07-30'
+date: '2023-09-04'
 author: jaime
 ---
 
 # v0.14.0 Released
 
-I'm back with what is quite likely my personal favorite update to Thyseus! This
-time around, we're introducing a more readable API, performance improvements,
-some new highly-requested features, and less code both for you to write _and_ in
-the core library. Did I mention these were all the same change?
+Welcome back to another release blog!
+
+If you're new here, Thyseus is an archetypal Entity Component System (ECS) aimed
+at providing a best-in-class developer experience with blazing-fast performance.
+Get started or upgrade with:
+
+```sh
+pnpm add thyseus@latest
+pnpm add -D @thyseus/rollup-plugin-thyseus@latest
+```
+
+This update has been in the works for quite some time - I had the original idea
+for it nearly a year ago, but I had planned to push it off to be a post-1.0
+exploration. Feeling dissatisfied with certain parts of the API, I decided to
+investigate it sooner to see if it was feasible & performant; that investigation
+turned out extremely successful!
+
+This is without a doubt my personal favorite update to Thyseus; it introduces a
+more readable API, performance improvements, some new highly-requested features,
+and less code both for you to write _and_ in the core library. Did I mention
+these were all the same change?
 
 ## Serialized Structs
 
@@ -27,8 +44,8 @@ when they can be used. To name some of their limitations:
 -   There are many cases where you can't even construct them.
 
 This is far from the developer experience we're trying to provide. In an ideal
-world, components in a Typescript ECS should just be classes like any other, no
-caveats or gotchas.
+world, components in a Typescript ECS should be expressed as classes like any
+other, no caveats or gotchas.
 
 **So, why not?**
 
@@ -47,20 +64,22 @@ Decorate a class with `@struct`, type your fields, and you're done. ✨
 
 This new API is made possible by the Thyseus transformer. The decorator is a
 no-op that gets stripped from builds; it's only needed to let the transformer
-know to apply transformations. As a bonus, the `@struct` decorator is now
+know a class should be transformed. As a bonus, the `@struct` decorator is now
 overloaded and can work as either a legacy decorator _or_ a new ES decorator -
 go ahead and remove `"experimentalDecorators": true`.
 
 Behind this new API is a fundamental change to the way structs work. Rather than
-using accessors and read/writing directly to Thyseus's `Memory`, **structs are
-now just normal objects with normal properties**. The transformer doesn't touch
-the core functionality of the class, but merely adds a few extra properties that
-Thyseus needs like size, alignment, and how to serialize/deserialize the type.
+using accessors and directly mutating values in memory, struct properties are
+_normal properties_; values are copied from memory into an instance, mutated as
+needed, then written back to memory. Thanks to some clever tricks applied in
+systems, this approach is equivalent in performance to _handwriting_ structs
+(i.e., without decorators) in previous versions of Thyseus, which is usually
+anywhere from \~1.5x to 15x faster than decorated structs.
 
-Thanks to some clever tricks applied in systems, this approach is equivalent in
-performance to _handwriting_ structs (e.g., without decorators) in previous
-versions of Thyseus, which is usually anywhere from ~1.5 to 15x faster than
-decorated structs. Better yet, the serialization model unlocks a _ton_ of
+All of this means the core functionality of your classes remain intact so **what
+you see is what you get**; structs behave just like any other class, and you can
+leave the tedious work of creating the few extra properties that Thyseus needs
+to the transformer. Better yet, the serialization model unlocks a _ton_ of
 potential for structs.
 
 That's right - we're just getting started.
@@ -69,9 +88,9 @@ That's right - we're just getting started.
 
 The new struct API allows the same fine-grain control over types as the previous
 API. Thyseus exports all the numeric types you're used to - the types themselves
-are just aliases for `number` (or `bigint` in the case of `u64`/`i64`), but the
-transformer will use the narrower type for serialization. It also permits the
-use of plain ol' `number`, which functions identically to `f64`.
+are just aliases for `number` (`bigint` for `u64`/`i64`), but the transformer
+will use the narrower type for serializing/deserializing fields. It also permits
+the use of plain ol' `number`, which functions identically to `f64`.
 
 ```ts
 @struct
@@ -86,7 +105,7 @@ class SomePrimitives {
 ```
 
 The previous complex types are still around in some form as well, with
-`string`s, tuples (fixed-size same-type arrays), and other structs!
+**strings**, **tuples** (fixed-size same-type arrays), and **other structs**!
 
 ```ts
 @struct
@@ -97,7 +116,23 @@ class Player {
 }
 ```
 
-Neat! How about some **new types**, too? Maybe something dynamic... like arrays?
+**Numeric enums** are also permitted (string enums are _not_) and will be
+serialized as the best found numeric match.
+
+```ts
+enum Status {
+	Pending,
+	Resolved,
+	Rejected,
+}
+
+@struct
+class PromiseLike {
+	status: Status = Status.Pending; // serialized as a u8
+}
+```
+
+Neat! How about some new types - like **arrays**?
 
 ```ts
 @struct
@@ -106,15 +141,15 @@ class SomeComponent {
 }
 ```
 
-No custom abstraction or wrapper over every access, just the Javascript arrays
-you're used to. Currently, arrays are restricted to same-type numerics for
-elements, but unlike tuples they can have a variable number of elements in them.
+No custom abstraction, no wrapper over every access - just the JS arrays you're
+used to. Arrays must contain same-type numerics, but unlike tuples they can have
+a variable number of elements in them.
 
 Serialization opens the door to all of this. For the first iteration, the focus
 has been on retaining old functionality and introducing just a couple
 highly-requested features. In the future, we'll extend the available types;
 pretty much anything you can safely serialize & deserialize is possible, so feel
-free to start making feature requests!
+free to open a ticket!
 
 ### Construction & Destruction
 
@@ -127,7 +162,7 @@ consider when to call `dropStruct()`.
 
 With serialization, none of this is necessary - **`initStruct()` and
 `dropStruct()` have been removed**. You can create instances whenever you want,
-and because instances are just normal objects you can forget about lifetimes!
+and because structs behave like any other class you can forget about lifetimes!
 
 You can also specify default values without a constructor:
 
@@ -145,15 +180,14 @@ Note that because fields are now plain object properties, you will see
 Typescript errors if you don't provide _some_ form of field initialization for
 your structs.
 
-The only requirement left is that if a struct is being used directly as a
-component or resource, its constructor's arguments must still be optional
-(Thyseus needs to construct instances somehow, after all). However, if you're
-only using the struct as a substruct, it _can_ have required constructor
-arguments.
+The only requirement left is that structs being used as components or resources
+may only have optional constructor arguments (Thyseus needs to construct
+instances somehow!). However, structs that are only ever used as substructs may
+have required constructor arguments.
 
 ### Inheritance
 
-Inheritance needs some love, too. To recap, previously extension was permitted
+Inheritance needed some love, too. To recap, previously extension was permitted
 so long as new fields weren't added. We can do better though; with
 serialization, **extension is permitted without restriction**.
 
@@ -184,49 +218,67 @@ If you add fields to an extended class, you'll still need to decorate it with
 
 Here's some general usage notes to keep in mind:
 
--   (Throws) All fields on `@struct` classes **must define explicit types**,
+-   (Silent) **Early returns in queries/systems will cause structs to not be
+    correctly serialized**. You can call `serialize()` yourself if needed here.
+    -   This will be fixed in a future update, but I didn't want to further
+        block the release on this.
+-   (Throws) **All fields on `@struct` classes must define _explicit_ types**,
     even if they assign a default value.
--   (Throws) Types not mentioned above (or in the docs) **are not permitted**.
+-   (Throws) **Types not mentioned above (or in the docs) are not permitted**.
     This includes aliases, similar to system parameters.
 -   (Silent) `static`, `readonly`, `declare`, `abstract`, and accessor fields
     are ignored.
 -   (Silent) Classes decorated with `@struct` will have `serialize()`,
     `deserialize()`, `static size`, `static alignment`, and `static drop()`
     properties overridden if they exist.
-    -   You may add placeholder values for these and use the
-        transformer-generated properties in your own code if needed.
 
 ### Under The Hood
 
 As mentioned, this is all powered by the transformer. The transformer reads the
-types of your struct properties and generates efficient
+types of your struct properties and generates highly efficient
 serialization/deserialization methods for structs based on those properties.
-This allows the same powerful control over Memory that we're used to while also
-enabling the use of Javascript types
+This allows the same powerful control over Memory you're used to while also
+enabling the use of familiar JS constructs like arrays.
 
-In order to achieve the best performance possible, the transformer also must
-assume the responsibility of _creating_ serialization calls. Queries allow for
-variable numbers and types of elements, which is difficult for VMs to optimize.
-To fix this, the transformer adds in `deserialize()` calls at the beginning and
-`serialize()` calls at the end of your `for...of` loops (for `Query` and
-`EventReader`/`EventWriter`). Within a system, these calls are always the same,
-allowing VMs to be clever and generate highly efficient code. Similarly, for
-resources and system resources the transformer simply inserts the deserialize
-and serialize calls at the beginning and end of systems.
+In order to achieve the best performance possible, the transformer must also
+assume the responsibility of _creating_ serialization calls. Systems that use
+resources/system resources and `for...of` loops for queries have
+`serialize()`/`deserialize()` calls inserted at the beginning & end of the
+scope. This insertion allows VMs to get much more clever and improves
+performance by an order of magnitude.
 
-As an added bonus to all of this, structs aren't turned into anonymous classes,
-meaning you should be able to find the names of them much more easily when
-debugging.
+As a final bonus, all these changes mean structs aren't turned into anonymous
+classes anymore, making debugging _much_ easier.
 
 ## Other Changes
 
+### Bundler Plugin Name Changes
+
+For this version, **the rollup plugin for Thyseus has been renamed** to be more
+inline with the rest of the rollup plugin ecosystem; the rollup plugin is
+available as `@thyseus/rollup-plugin-thyseus`.
+
+I've also decided to scale back on bundler plugins for the time being -
+supporting both rollup and webpack was proving tedious without clear community
+need for webpack support. `@thyseus/typescript-transformer` is still available
+for usage and can be configured to work with any bundler that allows you to
+transform source code or add typescript transformers.
+
+### `Entity.prototype.is()`
+
+The entity component now has an `is()` method that you can use to check if two
+entities are the same. Internally it's just a simple comparison of index &
+generation, but it's a small readability boon and sidesteps any questions of
+potential object creation that comes with comparing entity `id`s (bigints,
+yarr!).
+
 ### Events
 
-`EventWriter.create()` has been modified to have the same API as
-`EventWriter.createFrom()`, and `EventWriter.createFrom()` has been removed.
-Serialization simply makes returning mutable instances less useful as a pattern.
-It's still perfectly acceptable to recycle instances - feel free to handle it
-locally!
+`EventWriter.create()` has taken the signature of `EventWriter.createFrom()`,
+and `EventWriter.createFrom()` has been removed. Serialization makes returning
+mutable handles less necessary as a pattern. Recycling instances is still
+perfectly acceptable as data is still immediately copied - feel free to handle
+this locally!
 
 Events have also been reworked to use 50% less memory (from the `Memory` API)
 for their internal metadata.
@@ -234,14 +286,22 @@ for their internal metadata.
 ### Commands
 
 Commands have been reworked to differentiate `Add` and `AddType` commands when
-storing command queues, resulting in a significant reduction in the memory
-needed to store `AddType` commands.
+enqueueing commands, resulting in a significant reduction in the memory needed
+to store `AddType` commands.
+
+### World Config & Node Support
+
+When running in non-browser environments, Thyseus previously required you
+provide `isMainThread` config to worlds to determine if they're being built in
+the main thread or a worker thread. While this requirement remains in place for
+multithreaded worlds, Thyseus now defaults `isMainThread` to `true` when using
+only one thread, making it easier to get started in non-browser environments.
 
 ### Queries
 
 The `forEach()` method on queries has been removed - having multiple methods of
-iteration adds little value in this case and increases the surface area of code
-we have to maintain.
+iteration adds little to no value in this case while increasing our maintenance
+burden.
 
 ## A Note On Javascript Support
 
@@ -259,12 +319,21 @@ and contributions on this front are more than welcome!
 
 ## What's Next?
 
-While these changes should work without issue in their current state, some tech
-debt was taken on in order to get this into your hands quicker. The next focus
-will be on resolving some of this debt, including migrating to a monorepo and
-cleaning up the internals of the transformer to be more flexible (such as
-allowing aliases and better configuration). This should improve velocity &
-stability moving forward. Some other miscellaneous reworks are likely to make it
-into the next update - and of course, feature requests are always welcome!
+This is most likely the last large breaking change Thyseus will see for quite
+some time - the current roadmap is mostly just minor improvements, cleanup, and
+performance improvements. It's my hope that Thyseus will land in a spot
+relatively soon where there will be no more breaking changes being considered -
+at that point, we'll be nearing a 1.0 release!
+
+The next release should follow quickly and will (probably) focus on some small
+cleanup up for the query filter API to make them filters easier to write &
+parse, alongside some other miscellaneous improvements.
+
+With nothing substantial on the horizon, it's the perfect time to request
+anything that you'd like to see added or changed in Thyseus. Any performance
+issues you've spotted, parts of the API that feel clunky, or something new -
+whatever will make you more productive with Thyseus! As always, you can start a
+conversation on [github](https://github.com/JaimeGensler/thyseus) or in the
+`#thyseus` channel of the Web ECS [discord](https://discord.gg/T3g8U89qqZ).
 
 Cheers, and until next time!

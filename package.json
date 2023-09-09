@@ -10,7 +10,7 @@
 	},
 	"keywords": [],
 	"author": "Jaime Gensler",
-	"license": "ISC",
+	"license": "MIT",
 	"dependencies": {
 		"@headlessui/react": "^1.7.14",
 		"@headlessui/tailwindcss": "^0.1.3",

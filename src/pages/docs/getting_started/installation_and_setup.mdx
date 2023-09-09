@@ -7,12 +7,11 @@ import { Tabs, Callout } from ':ui';
 # Installation & Setup
 
 <Callout type="note">
-	**This guide assumes that you are using a [Rollup](https://rollupjs.org/)-
-	or [Webpack](https://webpack.js.org/)-based bundler.** The official Thyseus
-	transformer is available as a (Vite-compatible) Rollup plugin and a Webpack
-	loader. If you'd like support to be added for your bundler of choice, please
-	[file a
-	ticket](https://github.com/JaimeGensler/thyseus-transformer/issues/new)!
+	**This guide assumes that you are using a
+	[Rollup](https://rollupjs.org/)-based bundler.** The official Thyseus
+	transformer is available as a (Vite-compatible) Rollup plugin. If you'd like
+	support to be added for your bundler of choice, please [file a
+	ticket](https://github.com/JaimeGensler/thyseus/issues/new)!
 </Callout>
 
 ## Package Installation
@@ -50,15 +49,15 @@ experience with Typescript, it's recommended that you
 [get familiar with the basics](https://www.typescriptlang.org/docs/handbook/typescript-in-5-minutes.html)
 before starting with Thyseus.
 
-Currently, the transformer is available for Rollup and Webpack.
+Currently, the transformer is available for Rollup.
 
 {/* prettier-ignore */}
-<Tabs items={['Rollup', 'Vite', 'Webpack']}>
+<Tabs items={['Rollup', 'Vite']}>
 	<Tabs.Panel>
 		The Thyseus transformer for Rollup is a plugin. Install:
 
     	```sh
-    	pnpm add typescript @thyseus/transformer-rollup
+    	pnpm add typescript @thyseus/rollup-plugin-thyseus
     	```
 
     	And configure:
@@ -82,50 +81,19 @@ Currently, the transformer is available for Rollup and Webpack.
     	The Thyseus transformer for Vite is a compatible Rollup plugin. Install:
 
     	```sh
-    	pnpm add typescript @thyseus/transformer-rollup
+    	pnpm add typescript @thyseus/rollup-plugin-thyseus
     	```
 
     	And configure:
 
     	```ts filename="vite.config.ts" {2,5}
     	import { defineConfig } from 'vite';
-    	import { thyseusPlugin } from '@thyseus/transformer-rollup';
+    	import { thyseusPlugin } from '@thyseus/rollup-plugin-thyseus';
 
     	export default defineConfig({
     		plugins: [thyseusPlugin()],
     	});
     	```
-    </Tabs.Panel>
-    <Tabs.Panel>
-    	The Thyseus transformer for Webpack is a loader. Install:
-    	```sh
-    	pnpm add typescript @thyseus/transformer-webpack
-    	```
-
-    	And configure:
-
-    	```js filename="webpack.config.js" {11-14}
-    	module.exports = {
-    		module: {
-    			rules: [
-    				{
-    					test: /\.ts$/,
-    					exclude: /node_modules/
-    					use: [
-    						{
-    							loader: 'ts-loader',
-    						},
-    						{
-    							loader: '@thyseus/transformer-webpack',
-    						},
-    					],
-    				},
-    			],
-    		},
-    	};
-    	```
-
-    	Note that `@thyseus/transformer-webpack` **must** appear _after_ `ts-loader` in order to work, as the plugin transpiles Typescript to Typescript
     </Tabs.Panel>
 
 </Tabs>

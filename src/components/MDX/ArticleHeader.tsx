@@ -10,7 +10,7 @@ export function ArticleTitle({ className }: { className?: string }) {
 	const { headings } = usePageOptions();
 	return (
 		<Heading level={1} className={className}>
-			{headings[0].value}
+			{headings[0]?.value}
 		</Heading>
 	);
 }

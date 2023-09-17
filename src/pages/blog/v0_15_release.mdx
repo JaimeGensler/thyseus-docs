@@ -1,0 +1,136 @@
+---
+title: v0.15 Release
+date: '2023-09-17'
+author: jaime
+---
+
+# v0.15 Released
+
+Time for another release blog! This one is coming hot on the heels of 0.14 -
+alas, two weeks will not be the regular speed of updates forever.
+
+If you're new here, Thyseus is an archetypal Entity Component System (ECS) aimed
+at providing a best-in-class developer experience with blazing-fast performance.
+Getting started with [the docs](/docs/getting_started).
+
+This release features some API cleanup as well as some internal cleanup & safety
+improvements. Let's take a look!
+
+## Query Filters Reworked
+
+Filters are the second generic of the `Query` type, and allow you to specify
+entities must have (or _not have_) a component without actually accessing that
+data. They're especially useful for tag components!
+
+For this update, we were able to significantly reduce the complexity of parsing
+queries, making it smaller and much more readable. We've also slightly reduced
+some of the potential runtime costs of filters.
+
+But of course, the most exciting update is the new API - let's take a look!
+
+### Explicit `And`
+
+Using tuples to express logical `And` clauses _sounds_ nice in theory, but
+ultimately just hurts readability and makes it less clear how different clauses
+of a filter are related. For this update, we've removed all tuples in query
+filters, and you can express a logical And using the new provided `And` filter.
+
+```ts
+function mySystem(query: Query<Entity, And<With<A>, Without<B>>>) {}
+```
+
+Here we've expressed that any matching entities must have `A` and must _not_
+have `B`. Explicit `And` makes this much easier to parse at a glance!
+
+### More Generics
+
+The other major weakness of the previous API was that expressing more than two
+clauses in `Or` filters (and now `And` filters) required deep nesting. With this
+update, **all filters accept up to _four_ arguments**; `Or` and `And` must take
+at least two, `With` and `Without` must take at least one. Nesting is still
+permitted, so if you need more you can still do so!
+
+{/* prettier-ignore */}
+```ts
+// Must have all four!
+function system1a(query: Query<Entity, With<A, B, C, D>>) {}
+function system1b(query: Query<Entity, Without<A, B, C, D>>) {}
+
+// Has A, doesn ot have B, has either C or D
+function system2(
+	query: Query<
+		Entity,
+		And<
+			With<A>, 
+			Without<B>, 
+			Or<With<C>, With<D>>
+		>
+	>,
+);
+```
+
+Note that the contents of `With` and `Without` must only be components, and that
+these are still considered as an and-like collection. This is an intentional
+design choice - `Or` filters are incredibly useful but dramatically increase
+complexity, creating multiple conditions a query can match rather than narrowing
+one condition.
+
+## `Resource.fromWorld()`
+
+Previously, resources could define an `async initialize()` instance method to
+perform some setup logic only on the main thread. For this update, we've changed
+this to instead be a `static async fromWorld(world: World)` method that is used
+to construct the resource in _all threads_. If you still need to do
+main-thread-only setup, you can use the new `isMainThread` property on `World`s
+and perform any setup in this method. This makes some previously impractical
+patterns much more manageable, separates construction/initialization from
+instance behavior and makes some functionality a bit more explicit.
+
+## `WorldBuilder` registry
+
+WorldBuilder is essentially just a registry that accepts items and enforces a
+stable ordering of elements, which makes creating worlds much easier. This is
+the main idea behind Thyseus' multithreading and allows us to avoid `eval()` or
+using class names (or other string keys) to identify components and systems
+between threads.
+
+This pattern is too useful to be internal-use-only. To remedy this, we've added
+a generic `register()` method to WorldBuilder. Provide a Symbol as a key and the
+item you'd like to register, and fetch it later when you need it! More docs on
+this pattern and its potential uses will be available in the future - it's a
+much more advanced feature, so odds are that you don't actually need it!
+
+## Resource-ified Events
+
+Events have been tweaked internally to be held in a resource. As a result, **it
+should now be possible for _almost all_ events-related code (e.g. `EventReader`,
+`EventWriter`, etc.) to be tree-shaken out if you do not use events.** If you do
+use events, this change should have very little impact on you.
+`worldBuilder.registerEvent()` as well as `world.eventReaders` &
+`world.eventWriters` no longer exist - you'll need to access the `Events`
+resource (a new export) to get to them!
+
+## Struct resource initial values fixed
+
+In 0.14 struct resources were not serialized before deserializing, which meant
+their values would be 0 the first time they were read, even with initializers;
+this has been resolved.
+
+## What's Next?
+
+As mentioned in the previous release blog, there's nothing huge on the horizon
+for Thyseus at the moment. Of course, there's always internals to cleanup,
+performance to improve, onboarding that could be made easier, and miscellaneous
+features that will make working with Thyseus easier. Unless something new comes
+up, it's fairly likely 0.15 will be the last breaking release for some time and
+updates will be much smaller. On the upside, there will be no need to roll them
+together into one larger update, so hopefully they'll release as soon as they're
+ready!
+
+As always, you can start a conversation on
+[Github](https://github.com/JaimeGensler/thyseus) or in the `#thyseus` channel
+of the [Web ECS Discord](https://discord.gg/T3g8U89qqZ) if you have feature
+requests, need help, want to contribute, or just want to talk to other people
+using Thyseus!
+
+Cheers, and until next time!

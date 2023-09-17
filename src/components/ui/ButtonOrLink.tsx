@@ -8,7 +8,7 @@ export function ButtonOrLink(props: ButtonOrLinkProps) {
 	const { pathname } = useRouter();
 
 	if (isButtonProps(props)) {
-		return <button {...(props as any)} />;
+		return <button {...props} />;
 	}
 
 	return <NextLink data-active-link={pathname === props.href} {...props} />;

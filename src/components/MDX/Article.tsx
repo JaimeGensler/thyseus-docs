@@ -4,10 +4,10 @@ import Link from 'next/link';
 import { Code } from './Code';
 import clsx from 'clsx';
 import { createComponent } from './createElement';
-import { ArticleHeader, ArticleTitle } from './ArticleHeader';
+import PortalledH1 from './PortalledH1';
 
 const mdxComponents = {
-	h1: () => null,
+	h1: PortalledH1,
 	h2: createComponent(Heading, '', { level: 2 }),
 	h3: createComponent(Heading, '', { level: 3 }),
 	// h4-h6 omitted as they are currently unused and unsupported by TOC
@@ -53,5 +53,9 @@ export function Article({
 		</article>
 	);
 }
-Article.Header = ArticleHeader;
-Article.Title = ArticleTitle;
+Article.Header = function ArticleHeader({ children }: React.PropsWithChildren) {
+	return <header className="mb-6">{children}</header>;
+};
+Article.Title = function ArticleTitle({ className }: { className?: string }) {
+	return <Heading level={1} className={className} />;
+};

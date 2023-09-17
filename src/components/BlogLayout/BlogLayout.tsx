@@ -7,6 +7,7 @@ import { Icon, Link, Time } from ':ui';
 type Props = React.PropsWithChildren;
 export function BlogLayout({ children }: Props) {
 	const { frontMatter } = usePageOptions();
+	console.log(children);
 
 	return (
 		<div className="relative overflow-y-auto h-screen">

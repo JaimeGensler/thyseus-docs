@@ -1,7 +1,0 @@
-{
-	"navigation": [
-		{ "path": "index", "title": "Introduction" },
-		{ "path": "rules", "title": "Rules" },
-		{ "path": "usage", "title": "Usage" }
-	]
-}

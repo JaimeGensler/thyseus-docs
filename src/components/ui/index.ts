@@ -7,3 +7,4 @@ export { Logo, IconLogo } from './Logo';
 export { Opinion } from './Opinion';
 export { Tabs } from './Tabs';
 export { Time } from './Time';
+export { Heading } from './Heading';

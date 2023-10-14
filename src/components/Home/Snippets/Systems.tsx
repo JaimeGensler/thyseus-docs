@@ -15,15 +15,9 @@ export function Systems() {
 				<span style={{ color: 'var(--shiki-token-function)' }}>
 					Query
 				</span>
-				<span style={{ color: 'var(--shiki-color-text)' }}>&lt;[</span>
-				<span style={{ color: 'var(--shiki-token-function)' }}>
-					Mut
-				</span>
-				<span style={{ color: 'var(--shiki-color-text)' }}>&lt;</span>
 				<span style={{ color: 'var(--shiki-token-function)' }}>
 					Position
 				</span>
-				<span style={{ color: 'var(--shiki-color-text)' }}>&gt;</span>
 				<span style={{ color: 'var(--shiki-token-punctuation)' }}>
 					,
 				</span>
@@ -32,7 +26,7 @@ export function Systems() {
 					Velocity
 				</span>
 				<span style={{ color: 'var(--shiki-color-text)' }}>
-					]&gt;) {'{'}
+					{']>) {'}
 				</span>
 			</span>
 			<span className="block">
@@ -56,8 +50,7 @@ export function Systems() {
 				<span style={{ color: 'var(--shiki-color-text)' }}>] </span>
 				<span style={{ color: 'var(--shiki-token-keyword)' }}>of</span>
 				<span style={{ color: 'var(--shiki-color-text)' }}>
-					{' '}
-					query) {'{'}
+					{' query) {'}
 				</span>
 			</span>
 			<span className="block">

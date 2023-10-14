@@ -1,13 +1,12 @@
 import { MDXProvider } from 'nextra/mdx';
-import { Heading } from './Heading';
 import Link from 'next/link';
 import { Code } from './Code';
 import clsx from 'clsx';
 import { createComponent } from './createElement';
-import PortalledH1 from './PortalledH1';
+import { Heading } from ':ui';
 
-const mdxComponents = {
-	h1: PortalledH1,
+const defaultMDXComponents = {
+	h1: createComponent(Heading, '', { level: 1 }),
 	h2: createComponent(Heading, '', { level: 2 }),
 	h3: createComponent(Heading, '', { level: 3 }),
 	// h4-h6 omitted as they are currently unused and unsupported by TOC
@@ -36,10 +35,11 @@ const mdxComponents = {
 	td: createComponent('td', 'py-2 px-1.5'),
 };
 
-export function Article({
-	children,
-	className,
-}: React.PropsWithChildren<{ className?: string }>) {
+type Props = React.PropsWithChildren<{
+	className?: string;
+	components?: React.ComponentProps<typeof MDXProvider>['components'];
+}>;
+export function Article({ children, className, components }: Props) {
 	return (
 		<article
 			className={clsx(
@@ -47,15 +47,11 @@ export function Article({
 				className,
 			)}
 		>
-			<MDXProvider components={mdxComponents as any}>
+			<MDXProvider
+				components={{ ...defaultMDXComponents, ...components } as any}
+			>
 				{children}
 			</MDXProvider>
 		</article>
 	);
 }
-Article.Header = function ArticleHeader({ children }: React.PropsWithChildren) {
-	return <header className="mb-6">{children}</header>;
-};
-Article.Title = function ArticleTitle({ className }: { className?: string }) {
-	return <Heading level={1} className={className} />;
-};

@@ -1,15 +1,14 @@
 import { useEffect, useRef } from 'react';
-import { Icon } from ':ui';
-import { usePageOptions, useThemeConfig } from ':hooks';
+import { usePageOptions } from ':hooks';
 import { DocsCategory } from './getDocsPageMap';
 import { Article } from '../MDX';
 import { TableOfContents } from './TableOfContents';
 import { Footer } from './Footer';
+import { DocsHeader } from './DocsHeader';
 
 type Props = React.PropsWithChildren<{ categories: DocsCategory[] }>;
 export function Content({ categories, children }: Props) {
-	const { route, filePath } = usePageOptions();
-	const { docsRepository } = useThemeConfig();
+	const { route } = usePageOptions();
 
 	const scrollContainerRef = useRef<HTMLElement>(null);
 	useEffect(() => {
@@ -36,22 +35,16 @@ export function Content({ categories, children }: Props) {
 			id="main"
 		>
 			<div className="flex items-stretch mr-auto">
-				<Article className="px-8 py-4 mx-auto tablet:mx-[unset]">
-					<Article.Header>
-						<div className="flex flex-col gap-6 tablet:gap-2 tablet:flex-row-reverse tablet:items-center justify-between py-1 text-gray-400 text-xs">
-							<a
-								className="flex items-center gap-1 hover:underline"
-								href={`${docsRepository}${filePath}`}
-							>
-								<Icon type="edit" />
-								<span>Edit this page on Github</span>
-							</a>
-							<p className="uppercase font-semibold">
-								{currentCategory.title}
-							</p>
-						</div>
-						<Article.Title />
-					</Article.Header>
+				<Article
+					components={{
+						h1: ({ children }) => (
+							<DocsHeader currentCategory={currentCategory}>
+								{children}
+							</DocsHeader>
+						),
+					}}
+					className="px-8 py-4 mx-auto tablet:mx-[unset]"
+				>
 					{children}
 					<Footer categories={categories} />
 				</Article>

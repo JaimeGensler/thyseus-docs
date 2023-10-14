@@ -1,0 +1,221 @@
+# v0.16 Released
+
+In the last blog post I mentioned that there were no particularly large plans
+for the near future - so naturally, within a week I was rethinking the
+fundamental architecture of Thyseus. After much challenging of the assumptions
+at the core of the library, this update is the biggest change to Thyseus's
+internal design yet.
+
+Of course such a huge change comes with many wins - for performance, getting
+started, removing gotchas, and contributing to (or reaching into) the library.
+It's also a huge win for bundle size, which has shrunk by over 30%! This huge
+drop is an even bigger win when considering parts of the library are
+tree-shakeable in ways they weren't before, and some transformation emit has
+shrunk a fair amount.
+
+Fear not - though there are breaking changes ahead, most of them should be
+fairly painless and only involve deleting old code. Let's dive in!
+
+## Threads Reconsidered
+
+One of Thyseus' big selling points is the fact that it handles multithreading
+for you. That's _kind of_ true - we've included a smart scheduler as part of
+Thyseus since v0.1, only requiring a change in config to take advantage of
+parallelism. However, this solution has historically been buggy, inflexible,
+and - worst of all - **_slow_**.
+
+Turns out writing a sound & performant smart scheduler is _really_ hard. Apart
+from this, it's become apparent that it's not even what most people want from a
+JS multithreading solution. The far more common use case is a dedicated render
+or physics thread, or a way to push some non-essential tasks somewhere else.
+
+With this in mind, I wrote up a design doc and considered what a solution that
+would meet real needs would look like. This new solution would never have been
+possible without invaluable input from [mcd]() and [kayh]() - many thanks to
+both of them! The new thread solution:
+
+-   Is **as safe** as the previous solution
+-   Is significantly more flexible
+-   Is much lighter weight
+-   Makes it possible for bundlers to only include necessary code for each
+    thread (_including the main thread_)
+-   Can be tree-shaken out for those who aren't using concurrency, or those who
+    would like to roll their own concurrency solution
+-   Allows node users to take advantage of threads
+
+### A New API
+
+The new threading API empowers you to write workers just like your typical web
+worker code with none of the boilerplate and all of the type-safety. Let's look
+at a simple example:
+
+```ts filename="myThread.ts"
+'use thread';
+
+export function adder(a: number, b: number) {
+	return a + b;
+}
+```
+
+Here we've specified the module is a thread with `'use thread';`. This sort of
+statement is likely familiar to those who work in the broader Javascript
+ecosystem, with `'use strict'` and NextJS's `'use client'` and `'use server'`.
+This statement is expanded by the transformer into an event handler that allows
+the module to receive events posted from the main thread. We also `export` the
+function we want exposed to the main thread - only exported fields are public!
+
+How does one access threads? Just like any other data or functionality - a
+system parameter!
+
+```ts filename="myMainThreadFile.ts"
+async function systemThatUsesThreads(
+	thread: Thread<typeof import('./myThread'))>
+) {
+	const result = await thread.run('adder', 1, 1);
+	console.log(result); // -> 2!
+}
+```
+
+In our system, we declare that we'd like to access the provided module as a
+thread. We're given a wrapper (`Thread`) over the worker which provides us with
+strong typesafety guarantees. We only exposed `adder`, so that's the only string
+`Thread` will recognize here, and it knows the number and types of arguments as
+well as the return! As worker code is inherently async, `thread.run()` returns a
+promise that resolves to whatever value was returned by the function called in
+the other thread.
+
+Of course, you aren't required to immediately await this promise in the system -
+you can choose to handle it however you like. There's also no problem with
+calling `thread.run()` again before the Promise has resolved - queue up as many
+tasks as you need run! Arguments and return values are structured-cloned when
+sent between threads, so be aware that only structured-cloneable values can be
+sent across threads.
+
+There may be cases where you may want to set a value in a worker from the main
+thread - or maybe you'd like to actually [transfer]() an object. We provide two
+primitives for this as well. Simply export mutable bindings from the worker...
+
+```ts
+'use thread';
+
+export let canvas: OffscreenCanvas;
+export let width: number;
+export let height: number;
+```
+
+...and `send()` or `transfer()` their new values from the main thread!
+
+```ts filename="myMainThreadFile.ts"
+async function someSystem(
+	thread: Thread<typeof import('./myThread'))>
+) {
+	const width = window.innerWidth;
+	const height = window.innerHeight;
+	await thread.transfer('canvas', new OffscreenCanvas(width, height));
+	await thread.send('width', width);
+	await thread.send('height', height);
+}
+```
+
+Here we've transferred an OffscreenCanvas object to the thread and set the
+`canvas` variable to it, as well as setting the `width` and `height`. Remember
+that these must be `let` statements to be reassigned.
+
+`'use thread'` does _not_ have to appear at the top of a module - for example,
+you could wrap it in `if (typeof document !== undefined)` if you also import the
+thread module on the main thread and want to avoid setting up event listeners
+that won't be used.
+
+Lastly, we've added a new piece of config - `createWorker(url: string): Worker`.
+This config accepts a url for the worker and should return a new worker-like
+object. This does _not_ have to be the same `Worker` as seen in browsers - it
+only needs to have methods for `addEventListener()`, `postMessage()`, and
+`terminate()`.
+
+### The Future
+
+This is very much a first iteration of threads. While these primitives are in
+solid shape, there's a lot of room to grow from this foundation, including
+pooling, allowing systems to be called in threads, and finding ways to
+gracefully prevent the total thread count exceeding
+`navigator.hardwareConcurrency`. This new concurrency model also unlocks a lot
+of potential outside of threads, including runtime components - to be explored
+in the future!
+
+## Removal of `run()`
+
+`run()` was only necessary for smart scheduling, allowing us to eek out as much
+parallelism as possible while enabling consumers to enforce ordering of systems.
+However, most consumers likely want a strict, consistent ordering of systems
+(which `run()` did _not_ guarantee), and the new concurrency model requires
+thread usage to be explicit anyway. As a result, **`run()` has been removed and
+systems will execute in the order they are added**. This is essentially already
+the previous behavior if you were only using single-threaded execution!
+
+## Mutable Default
+
+With the changes to the threading model, it was also time to reconsider
+mutability as well. If you only ever run code on one thread, the benefits of
+readonly default are more organizational than performance oriented. Wrapping
+types in `Mut` is also somewhat counterintuitive as typically mutability is the
+language default and you must specify `Readonly`. This is especially noticeable
+with queries, where the accessors you specify in `Query<A>` aren't exactly what
+you get in iterations.
+
+For 0.16, **`Mut` has been removed**. You may wrap your types in `Readonly` if/
+when you'd like - it's usually a good idea, but not mandatory. We're also
+providing an even-stricter `Read<T>`; Typescript's provided `Readonly` does not
+enforce nested objects to be readonly and allows methods that self-modify -
+`Read<T>` guarantees this strictness. `Read` and `Readonly` are treated
+identically in terms of transformation, so it's typically best to prefer
+`Read<T>`. Altogether, these changes should allow your apps to be safer than
+before!
+
+## POJOs in Components
+
+You read that right - plain old Javascript objects can now be used in
+components. This includes all built-ins (like `Map`s and `Sets`s), as well as
+instances of classes from third party libraries; if you're using Three.js, for
+example, you can just add a `THREE.Mesh` as a field in your components. Even
+arrays of complex objects are permitted - truly _anything_ can go in structs
+now! Objects that aren't instances of structs are guaranteed to be referentially
+identical every iteration, too - there's no cost to serialize/deserialize these.
+
+Thyseus still needs to know a couple things about memory layout for components
+and assumes they can be re-used in iteration, so **you cannot directly use POJOs
+or external classes as components**. Still, with a simple wrapper you're good to
+go!
+
+## `Memory` Removed
+
+When I first added custom memory allocation to Thyseus, it provided significant
+flexibility in what could be achieved with threads, only requiring most data to
+be sent across threads once. This design was incredibly powerful, but it also
+adds a _significant_ amount of code that must ship with all Thyseus consumers,
+while only benefiting those using concurrency. It was also the source of most of
+our complexity - most bugs that have been reported in Thyseus since the
+introduction of `Memory` were caused by it. Worse, it also put us on the hook
+for allocation-related performance, when ideally anything beyond "try to reuse
+objects where possible" should be left to browsers.
+
+With many of the assumptions about the needs of threads challenged, we were able
+to fully remove the `Memory` API. Its spiritual successor `Store` still
+maintains the tight control over memory layout you're used to, but is also able
+to lean into normal allocation and garbage collection - something runtimes excel
+at! All this with a cleaner, more readable, and in many cases faster API.
+
+## Resizeable Everything
+
+With the `Memory` API, most of Thyseus' internal classes were grow-only. The new
+`Store` class supports any sort of resizing, and so shrinking is now possible!
+Note that internals right now still don't choose to shrink ever - if you'd like
+to reclaim a little memory, you'll need to handle this manually. In the future,
+we'll investigate introducing some heuristics that can help Thyseus
+intelligently decide when stores ought to shrink.
+
+## Config simplified
+
+With the changes to threads and the removal of `Memory`, many of the options
+available in `config` have been made obsolete. In particular, `isMainThread`,
+`threads`, and `memorySize` have been removed. `useSharedMemory` is still
+available.

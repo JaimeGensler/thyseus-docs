@@ -3,8 +3,6 @@
 		{
 			"path": "custom_system_parameters",
 			"title": "Custom Parameters"
-		},
-		{ "path": "custom_executors", "title": "Custom Executors" },
-		{ "path": "memory", "title": "Memory API" }
+		}
 	]
 }

@@ -3,18 +3,50 @@
 In the last blog post I mentioned that there were no particularly large plans
 for the near future - so naturally, within a week I was rethinking the
 fundamental architecture of Thyseus. After much challenging of the assumptions
-at the core of the library, this update is the biggest change to Thyseus's
-internal design yet.
+at the core of the library, this update is the biggest change to the internal
+design yet; it's practically Thyseus 2.0!
 
 Of course such a huge change comes with many wins - for performance, getting
 started, removing gotchas, and contributing to (or reaching into) the library.
 It's also a huge win for bundle size, which has shrunk by over 30%! This huge
 drop is an even bigger win when considering parts of the library are
 tree-shakeable in ways they weren't before, and some transformation emit has
-shrunk a fair amount.
+been removed.
 
 Fear not - though there are breaking changes ahead, most of them should be
-fairly painless and only involve deleting old code. Let's dive in!
+fairly painless. Let's dive in!
+
+## Components Reconsidered
+
+Components being a core aspect of an ECS, working with them needs to be painless
+and straightforward. A lot of progress has been made in the past few versions,
+but there's still a few gotchas. When digging into it, the real pain points with
+components lies with **serialization** and **pooling**. We've leaned into binary
+data backing and object pooling since the very first release - individual
+instances are re-used and Thyseus handles the underlying data when iterating
+components. The reasoning for this was to keep memory usage low and to work with
+binary types in the hopes it'd be more performant.
+
+This forgets that Javascript runtimes are really, _really_ good at what they
+do - so good, in fact, that for an API like Thyseus's it's actually faster to
+just instantiate a bunch of objects and iterate those. As long as data is
+densely packed in single-type arrays and object shapes are stable, the VM can
+and will work miracles. The exact gains from this vary by browser and object
+shape, but in general it should be at least as performant, often more, and
+dramatically simplifies library internals.
+
+What does this mean for you?
+
+-   `@struct` and the binary numeric data types (`u8`, `u16`, etc.) have been
+    removed. The transformer does not emit any component-related code.
+-   **Any class can be used as a component, and classes can have any fields**.
+    Components must still be classes to determine their type.
+-   Component constructors may have required arguments.
+-   Sized components must be added to entities with `.add()` and not
+    `.addType()`.
+-   Tag components (ZSTs) can be created by extending the exported `Tag` class.
+-   `Promise.then()` and other callbacks will refer to the objects you think
+    they will in query/event iteration.
 
 ## Threads Reconsidered
 
@@ -35,7 +67,7 @@ possible without invaluable input from [mcd]() and [kayh]() - many thanks to
 both of them! The new thread solution:
 
 -   Is **as safe** as the previous solution
--   Is significantly more flexible
+-   Is much more atomic
 -   Is much lighter weight
 -   Makes it possible for bundlers to only include necessary code for each
     thread (_including the main thread_)
@@ -128,19 +160,16 @@ that won't be used.
 
 Lastly, we've added a new piece of config - `createWorker(url: string): Worker`.
 This config accepts a url for the worker and should return a new worker-like
-object. This does _not_ have to be the same `Worker` as seen in browsers - it
-only needs to have methods for `addEventListener()`, `postMessage()`, and
+object. This does _not_ have to be identical to `Worker` as seen in browsers -
+it only needs to have methods for `addEventListener()`, `postMessage()`, and
 `terminate()`.
 
 ### The Future
 
 This is very much a first iteration of threads. While these primitives are in
-solid shape, there's a lot of room to grow from this foundation, including
-pooling, allowing systems to be called in threads, and finding ways to
-gracefully prevent the total thread count exceeding
-`navigator.hardwareConcurrency`. This new concurrency model also unlocks a lot
-of potential outside of threads, including runtime components - to be explored
-in the future!
+solid shape, there's a lot of room to grow from this foundation, including task
+pools, allowing systems to be called in threads, and finding ways to gracefully
+prevent the total thread count exceeding `navigator.hardwareConcurrency`.
 
 ## Removal of `run()`
 
@@ -163,59 +192,58 @@ with queries, where the accessors you specify in `Query<A>` aren't exactly what
 you get in iterations.
 
 For 0.16, **`Mut` has been removed**. You may wrap your types in `Readonly` if/
-when you'd like - it's usually a good idea, but not mandatory. We're also
-providing an even-stricter `Read<T>`; Typescript's provided `Readonly` does not
-enforce nested objects to be readonly and allows methods that self-modify -
-`Read<T>` guarantees this strictness. `Read` and `Readonly` are treated
-identically in terms of transformation, so it's typically best to prefer
-`Read<T>`. Altogether, these changes should allow your apps to be safer than
-before!
+when you'd like - it's usually a good idea, but not mandatory. We also provide a
+stricter `Read<T>` type; Typescript's provided `Readonly` does not enforce
+nested objects to be readonly and allows methods that self-modify - `Read<T>`
+guarantees this strictness. `Read` and `Readonly` are treated identically in
+terms of transformation. Altogether, these changes should allow your apps to be
+safer than before!
 
-## POJOs in Components
+## Other Changes
 
-You read that right - plain old Javascript objects can now be used in
-components. This includes all built-ins (like `Map`s and `Sets`s), as well as
-instances of classes from third party libraries; if you're using Three.js, for
-example, you can just add a `THREE.Mesh` as a field in your components. Even
-arrays of complex objects are permitted - truly _anything_ can go in structs
-now! Objects that aren't instances of structs are guaranteed to be referentially
-identical every iteration, too - there's no cost to serialize/deserialize these.
+### Entity Liveliness
 
-Thyseus still needs to know a couple things about memory layout for components
-and assumes they can be re-used in iteration, so **you cannot directly use POJOs
-or external classes as components**. Still, with a simple wrapper you're good to
-go!
+As components are no longer pooled, it's safe to hold on to references of
+`Entity` components. To make working with entities easier, an `isAlive` property
+has been added to `Entity`; once an entity has been despawned (_after_
+`applyCommands` runs), it will be `false`. `Entity` components are never reused
+so once `isAlive` is false you should drop references to the object.
 
-## `Memory` Removed
+### Removal of Registration
 
-When I first added custom memory allocation to Thyseus, it provided significant
+The need for registering types before building a world has been lifted -
+resources and components can be added at runtime. In the future, we'll add new
+APIs to make it easier to take advantage of runtime components and dynamically
+adding systems.
+
+### `Memory` Removed
+
+When custom memory allocation was first added, it provided significant
 flexibility in what could be achieved with threads, only requiring most data to
 be sent across threads once. This design was incredibly powerful, but it also
 adds a _significant_ amount of code that must ship with all Thyseus consumers,
 while only benefiting those using concurrency. It was also the source of most of
 our complexity - most bugs that have been reported in Thyseus since the
 introduction of `Memory` were caused by it. Worse, it also put us on the hook
-for allocation-related performance, when ideally anything beyond "try to reuse
-objects where possible" should be left to browsers.
+for allocation-related performance. With many of the assumptions about the needs
+of threads challenged, we were able to fully remove the `Memory` API.
 
-With many of the assumptions about the needs of threads challenged, we were able
-to fully remove the `Memory` API. Its spiritual successor `Store` still
-maintains the tight control over memory layout you're used to, but is also able
-to lean into normal allocation and garbage collection - something runtimes excel
-at! All this with a cleaner, more readable, and in many cases faster API.
+### Simplified System Parameters
 
-## Resizeable Everything
+The changes to threads mean that system parameters can be much simpler - in
+fact, you only need to provide `intoArgument` for your own system parameters
+now. These will likely be expanded once again in the future as the threading API
+matures, but for now we wanted to remove the dead weight.
 
-With the `Memory` API, most of Thyseus' internal classes were grow-only. The new
-`Store` class supports any sort of resizing, and so shrinking is now possible!
-Note that internals right now still don't choose to shrink ever - if you'd like
-to reclaim a little memory, you'll need to handle this manually. In the future,
-we'll investigate introducing some heuristics that can help Thyseus
-intelligently decide when stores ought to shrink.
+### World Config Changes
 
-## Config simplified
+With the changes to threads and the removal of `Memory`, most of the options
+available in `config` have been made obsolete. The aforementioned
+`createWorker()` config is the only remaining config at the moment!
 
-With the changes to threads and the removal of `Memory`, many of the options
-available in `config` have been made obsolete. In particular, `isMainThread`,
-`threads`, and `memorySize` have been removed. `useSharedMemory` is still
-available.
+### Better Inline Documentation
+
+Quite a bit of documentation has been added to different classes and their
+methods - it should be easier than ever to understand what Thyseus can do from
+the comfort of your editor! As always, we're continuing to update and improve
+the docs on the site as well.

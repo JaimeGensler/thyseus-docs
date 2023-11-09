@@ -14,222 +14,83 @@ need.
 
 ## Writing Components
 
-Components are classes decorated with the `@struct` decorator. They can describe
-properties and **must give each property an explicit type**:
+Components are modeled as normal Javascript classes - they may contain fields of
+any type, as well as constructors and methods.
 
 ```ts
-import { struct } from 'thyseus';
-
-@struct
 class Health {
-	max: number = 0;
 	current: number = 0;
+	max: number = 0;
 }
 ```
-
-The above defines a `Health` component with two properties - the `max` and
-`current` health of the entity it belongs to. We've also added initializers and
-given each property an explicit type.
-
-### Types
-
-Component fields may be a subset of types. The primitives permitted are:
-
-| Name    | Description                  | Size (bytes) | Alias for |
-| ------- | ---------------------------- | ------------ | --------- |
-| boolean | `true` or `false`            | 1            | -         |
-| number  | Identical to `f64`           | 8            | -         |
-| u8      | Unsigned 8-bit integer       | 1            | number    |
-| u16     | Unsigned 16-bit integer      | 2            | number    |
-| u32     | Unsigned 32-bit integer      | 4            | number    |
-| u64     | Unsigned 64-bit integer      | 8            | bigint    |
-| i8      | Signed 8-bit integer         | 1            | number    |
-| i16     | Signed 16-bit integer        | 2            | number    |
-| i32     | Signed 32-bit integer        | 4            | number    |
-| i64     | Signed 64-bit integer        | 8            | bigint    |
-| f32     | 32-bit Floating Point number | 4            | number    |
-| f64     | 64-bit Floating Point number | 8            | number    |
-
-`number` and `boolean` work as expected, but components also allow other numeric
-types. If you're not used to working with multiple numeric types, don't worry;
-`number` is a fine choice getting started, it just may not always be the best
-fit!
 
 <Callout type="note">
-	When handling instances, _all_ numbers behave as typical Javascript numbers
-	(double-precision floating point numbers). They are casted into the narrower
-	type you specify when serialized, which is observable once the instance is
-	deserialized again.
+	Thyseus identifies the types of components by looking at what constructed
+	them. As a result, plain Javascript objects _cannot_ be used as components!
 </Callout>
 
-A more appropriate choice for our `Health` component might be `u32`:
-
-```ts
-@struct
-class Health {
-	max: u32 = 0;
-	current: u32 = 0;
-}
-```
-
-Some complex types are also permitted in structs, including strings, numeric
-tuples (fixed-size same-type arrays) and other structs.
-
-```ts
-import { struct, Entity } from 'thyseus';
-
-@struct
-class Player {
-	name: string = '';
-	color: [u8, u8, u8, u8] = [0, 0, 0, 0]; // [r, g, b, a]
-	id: Entity = new Entity(); // The entity component
-}
-```
-
-Numeric enums may also be used as struct types, and will be serialized as the
-smallest matching numeric:
-
-```ts
-enum Status {
-	Pending,
-	Resolved,
-	Rejected,
-}
-
-@struct
-class PromiseLike {
-	// This will be serialized as a u8
-	status: Status = Status.Pending;
-}
-```
-
-Structs also allow variable-sized same-type arrays - these arrays may contain
-any of the numeric primitives seen above.
-
-```ts
-@struct
-class Chunk {
-	blocks: u32[]; // Array<u32> will also work!
-}
-```
-
-### Methods
-
-Directly mutating the values of instances is often good design, but in some
-cases it may lead to issues. Consider our `Health` component: there's nothing
-from stopping `current` from exceeding `max`, which we likely do not want. This
-is a great case for methods:
+Here we've defined an isolated component that determines an entity's health. Of
+course, there's nothing stopping `current` from exceeding `max`, which we likely
+do not want. This is a great case for methods:
 
 ```ts {6-9,11-16}
-@struct
 class Health {
-	#max: u32 = 0;
-	#current: u32 = 0;
+	#max: number = 0;
+	#current: number = 0;
 
 	heal(amount: number) {
-		// Clamp to max!
+		// Clamp to max
 		this.#current = Math.min(this.#max, this.#current + amount);
 	}
 
 	takeDamage(amount: number): boolean {
-		// Clamp to 0 to prevent integer underflow
+		// Clamp to 0, we don't need to go any lower
 		this.#current = Math.max(0, this.#current - amount);
-		// Return a boolean indicating if this entity died!
+		// Return a boolean indicating if this entity died
 		return this.#current === 0;
 	}
 }
 ```
 
 We've converted the `max` and `current` properties to be `#` private, requiring
-consumers to use the `heal()` and `takeDamage()` methods. This protects us from
-integer underflow and `current` exceeding `max`, while keeping our code dry,
-localized, and easily testable.
+consumers to use the `heal()` and `takeDamage()` methods. This protects our
+fields from unexpected combinations while keeping our code dry, localized, and
+easily testable.
 
-### Constructors
-
-Structs may define constructors if needed. The only requirement is that if a
-struct is being used as a component, **the constructor must not have any
-required arguments**. If you're simply using it as a type for another struct,
-required arguments are permitted.
+Components can define constructors and be extended as needed
 
 ```ts {6-9}
-@struct
 class Health {
-	#max: u32;
-	#current: u32;
+	#max: number;
+	#current: number;
 
-	constructor(max = 100, current = max) {
+	constructor(max: number, current: number = max) {
 		this.#max = max;
 		this.#current = current;
 	}
 }
-```
 
-Like initializers, constructors can also define default values; in the above,
-adding the `Health` component by type will result in both `current` and `max`
-being 100.
-
-### Inheritance
-
-Structs may be extended:
-
-```ts
-@struct
-class Vec3 {
-	x: f64;
-	y: f64;
-	z: f64;
+class Vec2 {
+	x: number = 0;
+	y: number = 0;
+}
+class Vec3 extends Vec2 {
+	z: number = 0;
 }
 
 class Position extends Vec3 {}
 class Velocity extends Vec3 {}
 ```
 
-If you'd like to add additional properties to the extended class, make sure to
-decorate the class again.
+## Tag Components
+
+In some cases, you may want to add a "tag" to an entity (e.g., `IsPlayer`) but
+have no additional data associated with that component. While normal components
+work just fine for this, Thyseus allows you to create "tag" components -
+sometimes referred to as "zero-sized types" (ZSTs).
 
 ```ts
-@struct
-class Vec2 {
-	x: f64;
-	y: f64;
-}
+import { Tag } from 'thyseus';
 
-@struct
-class Vec3 extends Vec2 {
-	z: f64;
-}
-
-@struct
-class Vec4 extends Vec3 {
-	w: f64;
-}
+class IsPlayer extends Tag {}
 ```
-
-### Zero-Sized Types (ZSTs)
-
-In some cases, you may want to add a "tag" to entities (e.g., `IsPlayer`) but
-have no additional data associated with that component. In these cases, you can
-use a **zero-sized type**. As the name implies, these are structs that require
-no space when stored.
-
-```ts
-@struct
-class IsPlayer {}
-```
-
-## Disallowed Property Names
-
-The compiler adds additional properties to struct, which means that structs must
-not define these properties. In particular, structs may not have the following
-properties/methods:
-
--   `static size`
--   `static alignment`
--   `static drop() {}`
--   `__$$b`
--   `serialize() {}`
--   `deserialize() {}`
-
-It _is_ permitted to define these properties in your structs and access them so
-long as you know they'll be overwritten!

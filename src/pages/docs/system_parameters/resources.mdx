@@ -13,24 +13,16 @@ inputs, and other data that is unique to a world rather than an entity.
 
 ## Defining resources
 
-Resources are modeled as classes. Unlike components, they _can_ be, but are not
-required to be, decorated with `@struct`. Resources decorated with `@struct`
-will be accessible from any thread, while resources that are not will only be
-accessible on the main thread.
+Resources are modeled as classes:
 
 ```ts
-import { struct } from 'thyseus';
-
-// This resource can be accessed from any thread
-@struct
 class Time {
-	previous: f64 = 0;
-	current: f64 = 0;
-	delta: f64 = 0;
-	frameNumber: u32 = 0;
+	previous: number = 0;
+	current: number = 0;
+	delta: number = 0;
+	frameNumber: number = 0;
 }
 
-// This resource can only be accessed from the main thread
 class Renderer {
 	draw() {
 		// ...
@@ -52,15 +44,13 @@ function anotherSystem(myResource: Res<MyResource>) {
 }
 ```
 
-**Like components, resources are readonly by default**. If you'd like to mutate
-a resource, you can simply wrap it in `Mut`:
+Like components, resources can be wrapped in `Readonly` or `Read` if you'd like
+to narrow the type.
 
 ```ts
 class MyResource {}
 
-function someSystem(myResource: Res<Mut<MyResource>>) {
-	// myResource can be mutated now!
-}
+function someSystem(myResource: Res<Readonly<MyResource>>) {}
 ```
 
 <Callout type="tip">
@@ -76,9 +66,6 @@ special `initialize` method that will be called when the world is built. Let's
 consider a `Keyboard` resource that tracks inputs.
 
 ```ts
-import { struct } from 'thyseus';
-
-@struct
 class Keyboard {
 	W: boolean = false;
 	A: boolean = false;

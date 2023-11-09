@@ -4,11 +4,10 @@ title: Systems
 
 # Systems
 
-Systems are where the functionality of an ECS application lives and are the
-fundamental way you read and write data. Most often, systems are used to query
-for entities with particular components, but they can also be used to spawn
-entities, handle events, draw to canvases, serialize data & write it to the file
-system, or anything else you might need them to do.
+Systems are contain the functionality of an ECS application. Most often, systems
+are used to query for entities with particular components, but they can also be
+used to spawn entities, handle events, draw to canvases, serialize data & write
+it to the file system, or anything else you might need them to do.
 
 ## Defining Systems
 
@@ -30,12 +29,12 @@ entity _and_ adding a component to it:
 import { Health, Transform } from './components';
 
 export function spawnerSystem(commands: Commands) {
-	commands.spawn().addType(Health).addType(Transform);
+	commands.spawn().add(new Health()).add(new Transform());
 }
 ```
 
-When this system runs, it will be called with a `Commands` object, which we can
-do whatever we need with - check out the
+When this function runs, it will be called with a `Commands` object, which we
+can do whatever we need with - check out the
 [`Commands` page](/docs/system_parameters/commands) to see what else you can do
 with commands!
 
@@ -44,7 +43,6 @@ with commands!
 Next, let's look into queries more - they're probably the most used parameter!
 
 ```ts
-import { struct } from 'thyseus';
 import { Position, Velocity } from './components';
 
 export function moveSystem(query: Query<[Position, Velocity]>) {
@@ -62,9 +60,9 @@ export function moveSystem(query: Query<[Position, Velocity]>) {
 }
 ```
 
-First, we're defining a system that accepts one argument - a `Query`. This query
-will look for entities that have both a `Position` and a `Velocity` component -
-every entity that has _at least_ both of these components will match this query.
+First, we define a system that accepts one argument - a `Query`. This query will
+look for entities that have both a `Position` and a `Velocity` component - every
+entity that has _at least_ both of these components will match this query.
 
 ```ts {2-4}
 export function moveSystem(query: Query<[Mut<Position>, Velocity]>) {

@@ -6,20 +6,19 @@ import { Callout } from ':ui';
 
 # Commands
 
-The `Commands` object can be used to spawn & despawn entities, add components to
-& remove components from entities, and clear event queues. Individual commands
-aren't processed immediately - instead, each command is added to a queue. The
-entire queue of commands is later processed in a system called `applyCommands` -
-the effects of commands are not observeable until _after_ this system runs.
+`Commands` can be used to spawn & despawn entities, add components to & remove
+components from entities, and clear event queues. Individual commands aren't
+processed immediately - instead, each command is added to a queue. The entire
+queue of commands is later processed in the `applyCommands` system - the effects
+of commands are not observeable until _after_ this system runs.
 
 Let's look at how to use `Commands`!
 
 ## Setup
 
-Thyseus is built for a wide variety of use cases - this makes it versatile, but
-it also means it doesn't make assumptions about how your app will or should
-work. As a result, **you must add the `applyCommands` system yourself**. You can
-`import applyCommands` and add it to whatever schedule you need (and as many
+Thyseus is built for a wide variety of use cases and doesn't make assumptions
+about how your app should work; as a result, **you must add the `applyCommands`
+system yourself**. You can add it to whatever schedule you need (and as many
 times as you need with `cloneSystem`).
 
 Starting out, it's usually a good idea to add it to the end of the
@@ -53,8 +52,10 @@ If you need to "reobtain" the `EntityCommands` for an entity, you can use
 `get()`:
 
 ```ts
-function getHandle(commands: Commands, heldEntity: Res<HeldEntity>) {
-	const entityCommands = commands.getById(heldEntity.id);
+function getHandle(commands: Commands, query: Query<Entity>) {
+	for (const entity of query) {
+		const entityCommands = commands.get(heldEntity);
+	}
 }
 ```
 
@@ -62,30 +63,16 @@ function getHandle(commands: Commands, heldEntity: Res<HeldEntity>) {
 
 Commands are also how we add & remove components on entities.
 
-To add components, we can use the `addType()` method. `addType()` allows you to
-add components _by type_ - when commands are applied, that component will
-receive the default values for the component. Adding by type is especially
-useful for ZSTs!
+To add components, you can use `add()` and `addType()`. Most components must be
+added with `add()`, while tag components must be added with `addType()`. Adding
+by type is especially useful for ZSTs!
 
 ```ts
 import { IsEnemy } from './components';
 
 function spawnEntities(commands: Commands) {
 	for (let i = 0; i < 10; i++) {
-		commands.spawn().addType(IsEnemy);
-	}
-}
-```
-
-Sometimes you'll want to have some initial data for components. To do this, we
-can use `add()`.
-
-```ts
-import { Position } from './components';
-
-function spawnEntities(commands: Commands, pos: SystemRes<Position>) {
-	for (let i = 0; i < 10; i++) {
-		commands.spawn().add(pos.set(1, 2, 3));
+		commands.spawn().add(new Position(1, 2, 3)).addType(IsEnemy);
 	}
 }
 ```
@@ -101,7 +88,7 @@ function removePoison(
 	curedEvents: EventReader<Cured>
 ) {
 	for (const cured of curedEvents) {
-		commands.getById(cured.entityId).remove(Poisoned);
+		commands.get(cured.entity).remove(Poisoned);
 	}
 }
 ```
@@ -120,10 +107,3 @@ function despawnEntities(
 	}
 }
 ```
-
-## Parallelism
-
-`Commands` is designed to be **safely accessible in parallel** - systems on any
-thread can safely push commands to the queue at the same time as other systems.
-The `applyCommands` system requires access to the `World`, and as such creates a
-hard sync point.

@@ -2,11 +2,6 @@ export function Components() {
 	return (
 		<code data-language="ts" data-theme="default">
 			<span className="block">
-				<span style={{ color: 'var(--shiki-color-text)' }}>
-					@struct
-				</span>
-			</span>
-			<span className="block">
 				<span style={{ color: 'var(--shiki-token-keyword)' }}>
 					class
 				</span>

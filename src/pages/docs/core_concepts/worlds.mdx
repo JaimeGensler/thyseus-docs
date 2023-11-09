@@ -8,16 +8,13 @@ import { Callout } from ':ui';
 
 Worlds contain your entities and components, and are responsible for executing
 systems. Every world is independent and self-contained; systems and types can be
-used by multiple worlds, but data belongs to a single world. Many applications
-only need a single world - particularly starting out - but sometimes multiple
-may be the right choice.
+used by multiple worlds, but data belongs to a single world.
 
 ## Adding Systems
 
-Worlds start with a WorldBuilder and the `World.new()` method. The
-`WorldBuilder` is responsible for registering all systems and types that will be
-used in a particular World; all systems and types a world will use **must be
-registered**. Let's create one now:
+Worlds start with `World.new()`, which returns a `WorldBuilder`. The
+`WorldBuilder` is responsible for registering any systems you may want to start
+out.
 
 ```ts
 import { World } from 'thyseus';
@@ -25,9 +22,7 @@ import { World } from 'thyseus';
 const myWorldBuilder = World.new();
 ```
 
-Fortunately, you typically only need to worry about adding systems to your
-world; when you add a system, it can (usually) handle registering the types it
-needs! Let's add a system now:
+And let's add a system:
 
 ```ts {2,4}
 import { World } from 'thyseus';
@@ -37,9 +32,6 @@ function inventorySystem(query: Query<Inventory, With<IsPlayer>>) {}
 
 const myWorldBuilder = World.new().addSystems(inventorySystem);
 ```
-
-By adding this system, we've also registered the `Inventory` & `IsPlayer`
-components.
 
 Most methods on `WorldBuilder`s return the `WorldBuilder` itself, so they can be
 chained. Let's add a few more systems!
@@ -147,7 +139,7 @@ function helloSystem() {
 	console.log('Hello, world!');
 }
 
-function startSystem(world: World) {
+function start(world: World) {
 	async function loop() {
 		await world.runSchedule(DefaultSchedule);
 		requestAnimationFrame(loop);
@@ -157,44 +149,16 @@ function startSystem(world: World) {
 
 const myWorld = await World.new()
 	.addSystems(helloSystem)
-	.addSystemsToSchedule(StartSchedule, startSystem)
+	.addSystemsToSchedule(StartSchedule, start)
 	.build();
 
 myWorld.start();
 ```
 
 This is essentially the same as the previous example, but now we've localized
-all our startup logic to our `startSystem`. Using `world.start()` comes with the
-added bonus that it can safely be called from any thread (unlike
-`world.runSchedule`, which must only be called from the main thread).
-
-## Dependencies
-
-By default, Thyseus makes no guarantees about the order in which systems will be
-executed - it may be completely stable, or it could change every execution. If
-one of your system needs to run _before_ or _after_ another system, you can
-specify **system dependencies** using the `run` function.
-
-```ts {9,10}
-import { World, run } from 'thyseus';
-function systemA() {}
-function systemB() {}
-function systemC() {}
-function systemD() {}
-
-const myWorld = await World.new()
-	.addSystems(
-		run(systemA).after(systemB),
-		run(systemB).before(systemC).after(systemD),
-		systemC,
-		systemD,
-	)
-	.build();
-```
-
-Contradictory dependencies like `run(A).after(A)` or
-`run(A).after(B), run(B).after(A)` will cause an error to be thrown when the
-world is built.
+all our startup logic to `start`. Using `world.start()` comes with the added
+bonus that it can safely be called from any thread (unlike `world.runSchedule`,
+which must only be called from the main thread).
 
 ## Plugins
 

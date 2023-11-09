@@ -18,7 +18,6 @@ the `Query` type. Your system will receive a query as an argument that can be
 iterated over:
 
 ```ts
-import { struct } from 'thyseus';
 import { Health } from './components';
 
 export function querySystem(query: Query<Health>) {
@@ -31,11 +30,6 @@ export function querySystem(query: Query<Health>) {
 Here, we're querying for all entities with the `Health` component. In our system
 we iterate over each of those entities and log the current and max values; the
 yielded `health` value will be an instance of `Health`.
-
-<Callout type="warn">
-	Thyseus re-uses component instances during iteration for performance
-	reasons, so **you should not grab and hold a reference to it**.
-</Callout>
 
 If you'd like to access multiple components in the same query, you can use a
 tuple:
@@ -55,37 +49,9 @@ In this case, the query will yield `[Position, Velocity]` tuples. You can use
 tuples of any size to specify the components you need, but you cannot nest
 tuples.
 
-If you're copying these examples locally, you may have noticed that both `pos`
-and `vel` are typed as `readonly`. **By default, queries only provide `readonly`
-access to components.** Of course, data that can only ever be read is of very
-limited use to us.
-
-### Writing Data
-
-Mutable component data is as easy as wrapping your components in `Mut`:
-
-```ts
-import { Position, Velocity } from './components';
-
-export function moveSystem(query: Query<[Mut<Position>, Velocity]>) {
-	// Now position is mutable, but velocity is still readonly.
-	for (const [pos, vel] of query) {
-		pos.x += vel.x;
-		pos.y += vel.y;
-		pos.z += vel.z;
-	}
-}
-```
-
-Queries can have as many mutable components as needed! While it may be tempting
-to make everything mutable _just in case_, you should prefer immutability when
-possible.
-
-<Callout type="warn">
-	At the moment, Thyseus does not throw an error if you write data that you've
-	requested readonly. **This will likely change in the future**. For now,
-	Typescript will help prevent these mistakes!
-</Callout>
+You may also wrap your components in `Readonly<T>` or Thyseus's strict `Read<T>`
+type if you'd like to narrow the types further and prevent unwanted
+modifications to objects.
 
 ## Filters
 
@@ -115,8 +81,8 @@ you want to require multiple (an "And" clause):
 
 ```ts
 // Matched Entities will have A, B, and C
-// This is identical to Query(A, [With(B), With(C)])
-function yourSystem(query: Query<A, With<[B, C]>>) {}
+// This is identical to Query(A, And<With(B), With(C)>)
+function yourSystem(query: Query<A, With<B, C>>) {}
 ```
 
 ### Without

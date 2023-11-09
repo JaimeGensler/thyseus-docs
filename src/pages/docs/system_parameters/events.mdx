@@ -8,9 +8,9 @@ import { Callout } from ':ui';
 
 Events allow you to run logic in response to something that happened in your
 game, and can be used as a means of cross-system communication. Events are
-instances of `Struct`s, and live in a queue of other events of the same type.
-New events can be pushed to the queue with `EventWriter<T>`, and events in the
-queue can be read with `EventReader<T>`.
+instances of classes and live in a queue of other events of the same type. New
+events can be pushed to the queue with `EventWriter<T>`, and events in the queue
+can be read with `EventReader<T>`.
 
 **Events have no set lifetime** - they will persist until the queue is manually
 cleared. Both readers and writers can call the `clear()` method to queue a
@@ -23,15 +23,12 @@ event types.
 `EventReader`s are responsible for reading data from the event queue.
 
 They can be iterated over in a `for...of` loop, and will yield instances of the
-event type (`Readonly<T>`). You can also check their `length` to determine the
-number of elements in the queue.
+event type. You can also check their `length` to determine the number of
+elements in the queue.
 
 ```ts
-import { struct } from 'thyseus';
-
-@struct
 class LevelUpEvent {
-	level: u32 = 0;
+	level: number = 0;
 }
 
 export function readLevelUpEvents(
@@ -53,32 +50,19 @@ export function readLevelUpEvents(
 }
 ```
 
-<Callout type="warn">
-	Like queries, Thyseus reuses the same object with different backing data
-	when iterating events.
-</Callout>
-
 ## `EventWriter`
 
 `EventWriter` inherits all functionality of `EventReader`, and is also
-responsible for adding events to the queue. There are two provided methods of
-doing so:
-
--   `createDefault(): void` adds an element to the queue with the default data
-    for that struct.
--   `create(value: T): void` immediately copies the data from the passed
-    instance of the struct into the queue. **The passed `value` must be an
-    instance of the class**.
+responsible for adding events to the queue. You can add events to the queue with
+`create(value: T): void`, which simply pushes the provided value to the queue.
+**The passed `value` must be an instance of the class**.
 
 `EventWriter`s can also call `clearImmediate()` to immediately remove all events
 from the queue.
 
 ```ts
-import { struct } from 'thyseus';
-
-@struct
 class LevelUpEvent {
-	level: u32 = 0;
+	level: number = 0;
 }
 
 export function writeLevelUpEvents(levelUpEvents: EventWriter<LevelUpEvent>) {
@@ -94,9 +78,3 @@ export function writeLevelUpEvents(levelUpEvents: EventWriter<LevelUpEvent>) {
 	console.log(levelUpEvents.length); // -> 0
 }
 ```
-
-## Parallelism
-
-`EventWriter`s require exclusive access to their queue, and so intersect with
-readers and writers of the same type. `EventReader`s do _not_ require exclusive
-access, and so can run in parallel with other readers of the same type.

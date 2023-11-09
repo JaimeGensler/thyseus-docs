@@ -2,14 +2,15 @@
 title: Entities
 ---
 
+import { Doc } from ':ui';
+
 # Entities
 
-Entities are the building blocks of an ECS. Any concrete "thing" in your game
-world can be represented as an entity; players, enemies, items, the game level
-itself, even parts of the UI - all entities! Conceptually, an entity is simply
-an empty container for any number of **components**, and contains no special
-properties, data, or meaning on its own. In practice, an entity is nothing more
-than an integer id.
+Entities can represent any concrete "thing" in your game world; players,
+enemies, items, the game level itself, even parts of the UI - all entities.
+Conceptually, an entity is simply an empty container for any number of
+**components**, and contains no special properties, data, or meaning on its own.
+In practice, an entity is nothing more than an integer id.
 
 Because entities contain no inherent data or meaning, it's not particularly
 common to deal with them directly; instead, you'll usually interact with
@@ -39,11 +40,11 @@ adds the entity creation request to a queue. Entities are created later when the
 `applyCommands` system runs, which drains the queue of all commands. Created
 entities are not observable until _after_ commands have been applied!
 
-## Accessing Entity IDs
+## Accessing Entities
 
 Every entity possesses a special `Entity` component. This component allows you
-to access the entity's id, and can be queried for in systems (_queries will be
-covered more later, too!_).
+to access the entity's index, generation, and id, and can be queried for in
+systems (_queries will be covered more later, too!_).
 
 ```ts
 import { Entity } from 'thyseus';
@@ -55,6 +56,10 @@ function logAllEntityIds(query: Query<Entity>) {
 	}
 }
 ```
+
+Every Entity's `Entity` component is unique - if you'd like to access that
+entity later, you can hold onto. It also contains a `isAlive` field that can be
+used to
 
 ## Destroying Entities
 

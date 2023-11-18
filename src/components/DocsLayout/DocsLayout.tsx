@@ -10,9 +10,9 @@ export function DocsLayout({ children }: Props) {
 	const categories = getDocsPageMap(pageMap);
 
 	return (
-		<div className="min-h-screen">
+		<div className="h-screen flex flex-col">
 			<Header className="bg-primary-light border-b border-b-gray-600" />
-			<div className="relative w-full h-[calc(100vh-64px)] flex overflow-hidden">
+			<div className="relative flex-grow flex overflow-hidden">
 				<SideNavigation categories={categories} />
 				<Content categories={categories}>{children}</Content>
 			</div>

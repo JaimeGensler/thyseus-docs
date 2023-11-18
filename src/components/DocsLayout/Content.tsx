@@ -31,7 +31,7 @@ export function Content({ categories, children }: Props) {
 	return (
 		<main
 			ref={scrollContainerRef}
-			className="h-full flex-grow bg-primary-dark overflow-y-auto scroll-smooth"
+			className="flex-grow bg-primary-dark overflow-y-auto scroll-smooth"
 			id="main"
 		>
 			<div className="flex items-stretch mr-auto">

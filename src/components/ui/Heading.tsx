@@ -3,9 +3,9 @@ import clsx from 'clsx';
 import Link from 'next/link';
 
 const styles = [
-	'font-extrabold text-4xl text-white scroll-mt-8',
-	'font-bold text-2xl mt-10 mb-4 text-white scroll-mt-4 border-b border-gray-500 py-0.5',
-	'font-semibold text-xl mt-8 mb-2.5 text-white scroll-mt-2.5',
+	'scroll-mt-8',
+	'scroll-mt-4 border-b border-gray-500 py-0.5',
+	'scroll-mt-2.5',
 ];
 
 export function Heading({
@@ -19,7 +19,7 @@ export function Heading({
 
 	return (
 		<HeadingTag
-			className={clsx(styles[level - 1], className)}
+			className={clsx(styles[level - 1], 'not-prose', className)}
 			id={level === 1 ? 'overview' : id}
 			{...props}
 		>

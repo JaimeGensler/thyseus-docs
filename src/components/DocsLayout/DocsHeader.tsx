@@ -8,7 +8,7 @@ export function DocsHeader({ children, currentCategory }: Props) {
 	const { docsRepository } = useThemeConfig();
 
 	return (
-		<header className="mb-6">
+		<header>
 			<div className="flex flex-col gap-6 tablet:gap-2 tablet:flex-row-reverse tablet:items-center justify-between py-1 text-gray-400 text-xs">
 				<a
 					className="flex items-center gap-1 hover:underline"

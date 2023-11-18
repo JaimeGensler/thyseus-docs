@@ -12,39 +12,18 @@ used by multiple worlds, but data belongs to a single world.
 
 ## Adding Systems
 
-Worlds start with `World.new()`, which returns a `WorldBuilder`. The
-`WorldBuilder` is responsible for registering any systems you may want to start
-out.
+Worlds can be constructed with `new World(config)`. They may add components,
+events, and even systems at any point.
 
 ```ts
 import { World } from 'thyseus';
-
-const myWorldBuilder = World.new();
-```
-
-And let's add a system:
-
-```ts {2,4}
-import { World } from 'thyseus';
 import { Inventory, IsPlayer } from './components';
 
-function inventorySystem(query: Query<Inventory, With<IsPlayer>>) {}
-
-const myWorldBuilder = World.new().addSystems(inventorySystem);
+const world = new World().addSystems(inventorySystem);
 ```
 
-Most methods on `WorldBuilder`s return the `WorldBuilder` itself, so they can be
-chained. Let's add a few more systems!
-
-```ts {5-7}
-import { World } from 'thyseus';
-import { move, draw, handleInput } from './systems';
-
-const myWorldBuilder = World.new()
-	.addSystems(move)
-	.addSystems(draw)
-	.addSystems(handleInput);
-```
+The `addSystems()` method return the `World` itself so it can be chained. Let's
+add a few more systems!
 
 Of course, it's called `addSystems` for a reason:
 
@@ -57,12 +36,12 @@ const myWorldBuilder = World.new()
 	.addSystems(move, draw, handleInput);
 ```
 
-## Building A World
+## Preparing a World
 
-When you've added all the systems you'd like, you can build your world and start
-executing systems. We can use the `build()` method for this, which returns a
-promise that resolves with your completed world. Let's try it now with a system
-that just calls `console.log`:
+When you've added all the systems you'd like to get started, you need to
+_prepare_ the world to run. Some systems may require some async setup, so this
+will return a promise. Any time you add new systems to the world, you'll want to
+`prepare()` it again.
 
 {/* prettier-ignore */}
 ```ts {9}
@@ -72,112 +51,86 @@ function helloSystem() {
 	console.log('Hello, world!')
 }
 
-const myWorld = await World.new()
+const myWorld = await new World()
 	.addSystems(helloSystem)
-	.build();
+	.prepare();
 ```
 
 <Callout type="note">
 	Top-level await is a convenient way to handle the promise returned by
-	`build()` - especially when starting out - but is not required.
+	`prepare()`, but is not required.
 </Callout>
 
-Cool, but just building a world doesn't start your systems. Let's set up a loop
-to call our system!
+Let's also setup a loop to run your world!
 
 {/* prettier-ignore */}
 ```ts {11-15}
-import { World, DefaultSchedule } from 'thyseus';
+import { World, Schedule } from 'thyseus';
 
 function helloSystem() {
 	console.log('Hello, world!')
 }
 
-const myWorld = await World.new()
-	.addSystems(helloSystem)
-	.build();
-
-async function loop() {
-	await myWorld.runSchedule(DefaultSchedule)
-	requestAnimationFrame(loop)
+function setup(world: World) {
+	async function loop(timeElapsed: number) {
+		world.runSchedule(Schedule);
+		requestAnimationFrame(loop);
+	}
+	loop(0);
 }
-loop()
+
+const myWorld = await new World()
+	.addSystems(helloSystem)
+	.prepare();
+
+const world = await new World()
+	.addSystems(helloSystem)
+	.addEventListener('start', setup)
+	.prepare();
+
+world.start();
+
 ```
 
-Here, we're using the `runSchedule` method - we'll cover schedules next, but for
-now all you need to know is systems are added to the `DefaultSchedule` when you
-use `addSystems`, and calling `runSchedule` runs all systems in a schedule.
+Here, we're adding an event listener to the world's `"start"` event. When
+`start` is emitted, we're establishing a loop that runs the default schedule
+(all systems added with `addSystems()`) once per frame.
 
 If you look in your browser's log, you should see a whole lot of
 `"Hello, world!"`s!
 
 ## Schedules
 
-Worlds can contain multiple groups of systems called **schedules**. Schedules
-run all the systems they contain together before execution of other schedules
-may occur. However, schedules may contain systems that execute _other_
-schedules.
+Worlds can contain multiple groups of systems called **Schedules**. Schedules
+have a number of different uses - creating groups of systems that only runs when
+your app starts, or when tearing down, or systems that need to run at a fixed
+rate like physics systems.
 
-Schedules have a number of different uses - they can be used to create a group
-of systems that only runs when your app starts, or when tearing down, or systems
-that need to run at a fixed rate!
-
-By default, Thyseus provides two schedules - the `DefaultSchedule`, which
-systems are added to when calling `addSystems`, and the `StartSchedule`.
-
-### `StartSchedule`
-
-The `StartSchedule` is intended to control the execution of all other schedules.
-It is run when `world.start()` is called. Let's rewrite the above example using
-this:
-
-{/* prettier-ignore */}
-```ts {11-15}
-import { World, DefaultSchedule, StartSchedule } from 'thyseus';
-
-function helloSystem() {
-	console.log('Hello, world!');
-}
-
-function start(world: World) {
-	async function loop() {
-		await world.runSchedule(DefaultSchedule);
-		requestAnimationFrame(loop);
-	}
-	loop();
-}
-
-const myWorld = await World.new()
-	.addSystems(helloSystem)
-	.addSystemsToSchedule(StartSchedule, start)
-	.build();
-
-myWorld.start();
-```
-
-This is essentially the same as the previous example, but now we've localized
-all our startup logic to `start`. Using `world.start()` comes with the added
-bonus that it can safely be called from any thread (unlike `world.runSchedule`,
-which must only be called from the main thread).
+Thyseus provides the `Schedule` class which stores systems, their arguments, and
+can handle running them. You can create your own schedules by extending this
+class - e.g. `class PhysicsSchedule extends Schedule {}`. When calling
+`addSystems()`, systems are added to the `Schedule` class. If you'd like to add
+systems to your own schedule, you can call `addSystemsToSchedule()`.
 
 ## Plugins
 
-Plugins are simply functions that accept a `WorldBuilder` instance and register
-systems and types on that `WorldBuilder`. Plugins give you the flexibility to
-change the implementation details of a piece of functionality without changing
-the external API.
+Plugins are simply functions that accept a `World` and register systems and
+types on that `World`. Plugins give you the flexibility to change the
+implementation details of a piece of functionality without changing the external
+API.
 
 ```ts
-import { World } from 'thyseus';
+import { World, Schedule } from 'thyseus';
 import {
 	applyForces,
 	detectCollisions,
 	resolveCollisions,
 } from './physicsSystems';
 
-const FixedUpdateSchedule = Symbol();
-function physicsPlugin(builder: WorldBuilder) {
-	builder.addSystems(
+class FixedUpdateSchedule extends Schedule {}
+
+function physicsPlugin(world: World) {
+	world.addSystemsToSchedule(
 		FixedUpdateSchedule,
 		applyForces,
 		detectCollisions,

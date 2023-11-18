@@ -1,5 +1,6 @@
 import plugin from 'tailwindcss/plugin';
 import formPlugin from '@tailwindcss/forms';
+import typographyPlugin from '@tailwindcss/typography';
 import headlessUIPlugin from '@headlessui/tailwindcss';
 import type { Config } from 'tailwindcss';
 
@@ -31,7 +32,7 @@ export default {
 				500: 'hsl(208, 20%, 50%)',
 				400: 'hsl(208, 20%, 60%)',
 				300: 'hsl(208, 20%, 70%)',
-				200: 'hsl(208, 20%, 83%)',
+				200: 'hsl(208, 20%, 80%)',
 				100: 'hsl(208, 20%, 90%)',
 
 				DEFAULT: 'hsl(208, 20%, 80%)',
@@ -48,11 +49,25 @@ export default {
 			tablet: '780px',
 			desktop: '1192px',
 		},
+		extend: {
+			typography: ({ theme }: any) => ({
+				dark: {
+					css: {
+						'--tw-prose-body': theme('colors.gray[200]'),
+						'--tw-prose-headings': theme('colors.white'),
+						'--tw-prose-links': theme('colors.white'),
+						'--tw-prose-code': theme('colors.white'),
+						'--tw-prose-bold': theme('colors.white'),
+					},
+				},
+			}),
+		},
 	},
 
 	plugins: [
 		formPlugin,
 		headlessUIPlugin,
+		typographyPlugin,
 		plugin(({ addVariant, addUtilities }) => {
 			addUtilities({
 				'.scrollbar-thin': { 'scrollbar-width': 'thin' },

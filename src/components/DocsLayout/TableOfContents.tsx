@@ -22,9 +22,9 @@ export function TableOfContents() {
 	const activeHeadingId = useActiveHeading(headings);
 
 	return (
-		<div className="flex-shrink-0 w-64 hidden desktop:block text-sm pt-[6.25rem] pb-4 px-4">
+		<aside className="flex-shrink-0 w-64 hidden desktop:block text-sm pt-[6.25rem] pb-4 px-4">
 			{headings.length > 1 && (
-				<aside className="sticky top-[6.25rem] left-0">
+				<div className="sticky top-[6.25rem] left-0">
 					<p className="font-bold uppercase text-gray-400">
 						On this page
 					</p>
@@ -37,9 +37,9 @@ export function TableOfContents() {
 							/>
 						))}
 					</ul>
-				</aside>
+				</div>
 			)}
-		</div>
+		</aside>
 	);
 }
 

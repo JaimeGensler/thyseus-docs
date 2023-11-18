@@ -23,7 +23,7 @@ export function Callout({ type, children }: Props) {
 	return (
 		<div
 			className={clsx(
-				'border border-dashed rounded px-3 py-1.5 flex items-start gap-3',
+				'not-prose border border-dashed rounded px-3 py-1.5 flex items-start gap-3',
 				styleLookup[type],
 			)}
 		>

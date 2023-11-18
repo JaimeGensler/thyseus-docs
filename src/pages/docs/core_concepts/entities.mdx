@@ -58,8 +58,9 @@ function logAllEntityIds(query: Query<Entity>) {
 ```
 
 Every Entity's `Entity` component is unique - if you'd like to access that
-entity later, you can hold onto. It also contains a `isAlive` field that can be
-used to
+entity later, you can hold onto the object. It also contains an `isAlive` field
+that can be used to check liveliness at any point. Once the entity has been
+despawned, `isAlive` will be false.
 
 ## Destroying Entities
 

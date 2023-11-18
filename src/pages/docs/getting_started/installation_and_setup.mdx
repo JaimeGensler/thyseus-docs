@@ -6,16 +6,6 @@ import { Tabs, Callout } from ':ui';
 
 # Installation & Setup
 
-<Callout type="note">
-	**This guide assumes that you are using a
-	[Rollup](https://rollupjs.org/)-based bundler.** The official Thyseus
-	transformer is available as a (Vite-compatible) Rollup plugin. If you'd like
-	support to be added for your bundler of choice, please [file a
-	ticket](https://github.com/JaimeGensler/thyseus/issues/new)!
-</Callout>
-
-## Package Installation
-
 To get started with Thyseus, install the core library:
 
 {/* prettier-ignore */}
@@ -39,13 +29,20 @@ To get started with Thyseus, install the core library:
 
 ## Transformer Setup
 
-Thyseus makes use of a code transformer to make your code more performant and to
-provide better DX. All docs will assume you're using the transformer - if you're
-not, you'll need to
+<Callout type="note">
+	**This guide assumes that you are using a
+	[Rollup](https://rollupjs.org/)-based bundler.** The official Thyseus
+	transformer is available as a (Vite-compatible) Rollup plugin. If you'd like
+	support to be added for your bundler of choice, please [file a
+	ticket](https://github.com/JaimeGensler/thyseus/issues/new)!
+</Callout>
+
+Thyseus makes use of a Typescript transformer to provide better DX. The docs
+will assume you're using the transformer - if you're not, you'll need to
 [review the systems docs](/docs/core_concepts/systems#systems-without-the-transformer).
 
-The transformer also requires the use of Typescript; if you don't have
-experience with Typescript, it's recommended that you
+The transformer requires the use of Typescript; if you don't have experience
+with Typescript, it's recommended that you
 [get familiar with the basics](https://www.typescriptlang.org/docs/handbook/typescript-in-5-minutes.html)
 before starting with Thyseus.
 
@@ -97,38 +94,6 @@ Currently, the transformer is available for Rollup.
     </Tabs.Panel>
 
 </Tabs>
-
-## Typescript Setup
-
-Thyseus currently uses legacy decorators; your `tsconfig.json` must include
-`"experimentalDecorators": true`.
-
-### Global Type Setup (optional)
-
-ECS is a data-oriented paradigm and makes heavy use of types. Thyseus provides
-two way of accessing its types - direct imports from `'thyseus'`, or a global
-type injection. The choice of which to use is entirely up to you!
-
-If you'd like to use global type injection, you can add the following to your
-Typescript config:
-
-```json filename="src/tsconfig.json"
-{
-	"compilerOptions": {
-		// ...
-		"types": ["thyseus/global"]
-	}
-}
-```
-
-If you'd rather not, types can simply be imported:
-
-```ts
-import type { Query, Res /* ...any types you want */ } from 'thyseus';
-```
-
-For the sake of brevity, code snippets in the docs will assume you are using the
-global type injection.
 
 ## Development vs. production builds
 

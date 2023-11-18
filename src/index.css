@@ -20,8 +20,8 @@ body {
 }
 
 .line {
-	padding-left: 0.75rem;
-	padding-right: 0.75rem;
+	padding-left: 1rem;
+	padding-right: 1rem;
 	border-left-width: 1px;
 	border-left-color: transparent;
 }

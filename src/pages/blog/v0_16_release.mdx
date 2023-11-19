@@ -1,5 +1,5 @@
 ---
-title: v0.15 Release
+title: v0.16 Release
 date: '2023-12-01'
 author: jaime
 ---
@@ -11,35 +11,44 @@ for the near future - so naturally, within a week I was rethinking Thyseus's
 fundamental architecture. I spent some time working out the weakpoints as well
 as what causes them, challening many of the assumptions we've made along the
 way. The internal design has changed so much that this update is essentially
-Thyseus 2.0 (although fortunately, the migration shouldn't be too painful).
+Thyseus 2.0. Fortunately, upgrading to 0.16 should mostly involve deleting code
+and some small tweaks to areas with low surface area, like schedule definition.
 
-This release blog has a _ton_ of internal cross-cutting concerns and
-miscellaneous updates. To make it a sane read, I'm going to first focus on the
-internal changes before moving to a migration guide. Feel free to skip straight
-to migration if you want to get going right away!
+This release has a _ton_ of cross-cutting concerns and miscellaneous updates. To
+make it an easier read, we'll first dive in to the internal changes and
+motivations before moving to a simple changelog. Feel free to skip straight to
+the changelog if you want to get going right away!
 
 ## Weakpoints & Internal Changes
 
-The main theme of this update is **work _with_ Javascript, not against it**.
-Fighting against the language - or trying to outsmart the VM - is a losing
-battle, and will show up either in performance, library DX, internal
-productivity, or all of the above. In other words - if I'm going to make a
-Javscript ECS, I want to make a _Javascript_ ECS.
+Thyseus has a lot of strong points and a lot of aspects I'm very happy with.
+Overall, I think working with the library is fairly straightforward. However,
+there's many areas where I feel that Thyseus doesn't behave predictably, where
+we break away from assumptions you can normally safely make about while working
+in Javascript. For me, a Javascript ECS should embrace the language - if it
+doesn't, why not just use something like Bevy and target web with WASM?
 
-So what's wrong with Thyseus today?
+So - the main "theme" of this update is **working _with_ Javascript, not against
+it**. Fighting against the language - or trying to outsmart the VM - is a losing
+battle, and will show up either in performance, library DX, internal
+productivity, or all of the above. For us right now, it's all of the above; it's
+not too bad in any particular area, but as a whole it makes maintenance of
+Thyseus and certain parts of using it more painful than necessary.
+
+So what exactly is wrong?
 
 -   Multithreading is inflexible and slow (explored in depth later).
 -   The amount of code shipped with all consumers of Thyseus is considerable,
     while much of it benefits only a subset of users.
--   Async patterns within systems are really tricky.
--   Handling components and resources is sometimes counterintuitive.
--   Development iteration is slow.
+-   Async patterns within systems are tricky.
+-   Handling components and resources can be counterintuitive.
+-   Internal development iteration is slow.
     -   Adding/modifying tests is difficult.
     -   There are too many cross-dependencies, making isolating breaking changes
-        and even new features difficult.
+        or new features difficult.
 -   Integration with third-party libraries is difficult-to-impossible.
 -   Reaching into the core library is impractical unless you read and understand
-    the entire source code of the library.
+    the entire source code.
 -   Extending worlds at runtime (adding/removing systems, runtime components,
     etc.) is highly desireable but not possible.
 
@@ -49,9 +58,9 @@ and memory control.
 
 ### Threads
 
-For some time now, I've felt Thyseus fails to deliver on one of it's big selling
-points - multithreading. While a half-measure solution is in place, it has
-historically been buggy, inflexible, and slow. Writing a sound & performant
+For some time now, I've felt Thyseus has failed to deliver on one of it's big
+selling points - multithreading. While a half-measure solution is in place, it
+has historically been buggy, inflexible, and slow. Writing a sound & performant
 smart scheduler is hard, but more to the point it's become apparent that it's
 not even what most people want from a threading solution. The far more common
 use cases are a dedicated render or physics thread, or a way to free the main
@@ -59,14 +68,15 @@ thread of some non-essential tasks.
 
 With this in mind, I've considered what a solution that would meet real needs
 would look like. This new solution would never have been possible without
-invaluable input from [mcd](https://github.com/3mcd)!
+invaluable input from [3mcd](https://github.com/3mcd)!
 
-The new API is arguably less featured than the previous API - it's much more
-explicit, and requires you to get hands-on with threads, synchronization, and
-data sharing. However, it's also significantly more atomic and flexible whiel
-remaining **as safe** as the previous solution. As a bonus, it's much lighter
-weight and can even be tree-shaken for those not using threads. The details of
-how to use the new API are included in the changelog.
+For its first release, the new API is arguably less featured than the previous
+API; it's much more explicit, and requires you to get hands-on with threads,
+synchronization, and data sharing. However, it's also significantly more atomic,
+flexible, and extensible while remaining **as safe** as the previous solution.
+As a bonus, it's much lighter weight and can even be tree-shaken for those not
+using threads. The details of how to use the new API are included in the
+changelog.
 
 ### Object Pooling & Memory Control
 
@@ -77,19 +87,18 @@ optimal bytecode, and object reuse would keep memory usage lower and potentially
 be more cache-friendly.
 
 This forgets that Javascript runtimes are really, _really_ good at what they do;
-so good, in fact, that it's actually faster to just iterate a list of objects
-than to re-use an object and move different different data into & out of it. If
-you keep your object shapes stable and Thyseus handles densely packing data in
-single-type arrays, JIT compilers will handle the difficult work for us. It's
-tough to give exact measurements on this as the exact gains vary quite a bit by
-runtime and object shape, but overall this change should be as fast as previous
-versions, and usually faster.
+so good, in fact, that in testing I've consistently seen that it's actually
+faster to just iterate a list of objects. If you keep your object shapes stable
+and Thyseus handles densely packing data in single-type arrays, JIT compilers
+will do the difficult work for us. It's tough to give measurements on the exact
+gains as they vary quite a bit by runtime and object shape, but overall this
+change should be as fast as previous versions and usually faster.
 
 This paired with the multithreading changes meant we were able to fully remove
 the `Memory` API, `@struct`, binary types, and any memory management.
 Components, events, and resources are just class instances now - **any** class
 you'd like - and callbacks and promises can reliably refer to component
-instances. There's also no benefit of register types ahead of time, so
+instances. There's also no need of register types ahead of time, so
 `WorldBuilder` is no longer needed and components, resources, events, and
 systems can all be added at runtime.
 
@@ -110,7 +119,7 @@ your data for you.
     -   Worlds can be constructed with `new World(config)`
     -   Worlds can add plugins and systems with the APIs you're used to.
     -   Call `world.prepare()` before `world.start()` to prepare systems to be
-        run.
+        run (returns a `Promise<World>`).
     -   Components, events, resources, and systems can all be added at runtime
         if needed.
 -   All previous fields of world config removed.
@@ -118,10 +127,10 @@ your data for you.
 -   `Memory` removed.
 -   `@struct` removed.
     -   Decorator and transformer emit removed. Components, resources and events
-        must be class instances.
+        still must be class instances.
     -   Components must be added to entities with `.add()` and not `.addType()`.
     -   **Data is not copied** when adding components or events - objects _are_
-        the data and are treated uniquely.
+        data and are treated uniquely.
 -   Binary types (e.g. `u8`, `u16`, etc.) removed.
     -   Use `number` instead.
 -   `DefaultSchedule` and `StartSchedule` removed; schedules are no longer
@@ -140,6 +149,7 @@ your data for you.
     -   System parameters use a new static `intoArgument()` method.
 -   `System.parameters` removed.
     -   Systems use a new `system.getSystemArguments()` property.
+    -   Transformer emit has been updated so no changes are required here.
 -   Global type injection import removed.
 
 ### Features

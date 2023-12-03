@@ -1,0 +1,53 @@
+---
+title: Threads
+---
+
+import { Callout } from ':ui';
+
+# Threads
+
+<Callout type="warn">
+	Threads and parallelism is an advanced topic. This page only outlines the
+	API we expose to make multithreading easier, and does not cover how to
+	correctly and safely make use of threads. Be sure you understand why, when,
+	and how you might use parallelism before continuing!
+</Callout>
+
+Threads can be used to offload certain tasks to another Javascript context,
+which will execute **in parallel** with the main thread. This can be used to
+handle CPU-intensive work or to offload non-essential tasks without blocking the
+main thread.
+
+Thyseus's thread abstraction behaves identically to the default behavior of web
+workers; data sent between threads is copied using
+[structured cloning](https://developer.mozilla.org/en-US/docs/Web/API/structuredClone)
+when sent. The only exception to this is `SharedArrayBuffer` objects, which are
+always shared.
+
+## `expose()`
+
+To expose functions that to the main thread that can be called in the worker
+thread, you can pass an object to the `expose()` function. `expose()` will setup
+event listeners for every function in the provided object before returning the
+provided object. For type help, you should make the return of `expose()` the
+_default_ export of your worker modules; `Thread<T>` uses this export to
+determine what functions can be called in the worker and the number & types of
+their arguments.
+
+## `Thread<T>`
+
+The `Thread<T>` class is an abstraction over web workers that creates a
+promise-based wrapper over messages and handles formatting data for worker
+threads using `expose()`.
+
+Exposed worker thread functions can be called from the main thread using
+`Thread.p.call()`:
+
+```ts
+async function mySystem(thread: Thread<typeof import('./threadModule')>) {
+	const result = await thread.call('add', 2, 2);
+}
+```
+
+`call()` may be called multiple times without waiting for the previous promises
+to resolve, and does not have to be awaited within the system itself!

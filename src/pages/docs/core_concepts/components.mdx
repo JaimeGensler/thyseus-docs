@@ -25,22 +25,27 @@ class Health {
 ```
 
 <Callout type="note">
-	Thyseus identifies the types of components by looking at what constructed
-	them. As a result, plain Javascript objects _cannot_ be used as components!
+	Thyseus identifies the types of components by looking at the object's
+	inherent `constructor` property. As a result, plain Javascript objects
+	cannot be used as components!
 </Callout>
 
 Here we've defined an isolated component that determines an entity's health. Of
 course, there's nothing stopping `current` from exceeding `max`, which we likely
 do not want. This is a great case for methods:
 
-```ts {6-9,11-16}
+{/* prettier-ignore */}
+```ts {6-10,14-17}
 class Health {
 	#max: number = 0;
 	#current: number = 0;
 
 	heal(amount: number) {
 		// Clamp to max
-		this.#current = Math.min(this.#max, this.#current + amount);
+		this.#current = Math.min(
+			this.#max,
+			this.#current + amount
+		);
 	}
 
 	takeDamage(amount: number): boolean {

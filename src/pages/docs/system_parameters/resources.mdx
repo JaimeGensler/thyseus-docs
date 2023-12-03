@@ -13,10 +13,13 @@ inputs, and other data that is unique to a world rather than an entity.
 
 ## Defining resources
 
-Resources are modeled as classes:
+Resources are classes:
 
 ```ts
 class Time {
+	static fromWorld() {
+		return new this();
+	}
 	previous: number = 0;
 	current: number = 0;
 	delta: number = 0;
@@ -30,16 +33,16 @@ class Renderer {
 }
 ```
 
-When these resources are used by systems, they will be refering to the same
-object (or, the same data for structs in worker threads):
+Thyseus must When these resources are used by systems, they will be refering to
+the same object.
 
 ```ts
 class MyResource {}
 
-function aSystem(myResource: Res<MyResource>) {
+function systemA(myResource: Res<MyResource>) {
 	// myResource here...
 }
-function anotherSystem(myResource: Res<MyResource>) {
+function systemB(myResource: Res<MyResource>) {
 	// ... is the same object as myResource here!
 }
 ```
@@ -53,6 +56,9 @@ class MyResource {}
 function someSystem(myResource: Res<Readonly<MyResource>>) {}
 ```
 
+Resources must either implement a static `fromWorld() {}` method, or be directly
+inserted into the world with `World.p.insertResource()`.
+
 <Callout type="tip">
 	If you have a type that you'd like to use as multiple resources, you can
 	simply subclass it.
@@ -60,59 +66,58 @@ function someSystem(myResource: Res<Readonly<MyResource>>) {}
 
 ## Initializing Resources
 
-In some cases, you may want to access your resource from any thread, but it must
-run some initialization on the main thread. For these cases, we can implement a
-special `initialize` method that will be called when the world is built. Let's
-consider a `Keyboard` resource that tracks inputs.
+If you'd like your resources to be automatically created by the world, you can
+implement the static `fromWorld() {}` method that will be called when schedules
+are prepared. This method will be passed the `world` building the resource, and
+so can insert _additional_ resources or event listeners. This method can also
+simply return an instance of the class.
+
+`fromWorld()` must return either an instance of the resource you'd like to
+create, **or a promise** that resolves to that instance.
 
 ```ts
+import { World } from 'thyseus';
+
 class Keyboard {
-	W: boolean = false;
-	A: boolean = false;
-	S: boolean = false;
-	D: boolean = false;
-}
-```
+	static fromWorld(world: World) {
+		return new this(world);
+	}
 
-Hypothetically, there's no reason the state of the keyboard shouldn't be read
-from any thread. However, we need to set up event listeners to capture
-`'keydown'` and `'keyup'` events, which _does_ need to happen only on the main
-thread. Constructors must be callable from all threads, so that's not an
-option - this is the perfect use for the `initialize` method!
-
-```ts
-import { struct, type World } from 'thyseus';
-
-@struct
-class Keyboard {
-	W: boolean = false;
-	A: boolean = false;
-	S: boolean = false;
-	D: boolean = false;
-
-	// This will be called once, on the main thread, while the world is being built.
-	initialize(world: World) {
-		// You can safely access APIs only available in the main thread here.
-		const handler = (e: KeyboardEvent) => {
-			const isHeld = e.type === 'keydown';
-			if (e.code === 'KeyA') {
-				this.A = isHeld;
-			}
-			if (e.code === 'KeyD') {
-				this.D = isHeld;
-			}
-		};
-		window.addEventListener('keydown', handler);
-		window.addEventListener('keyup', handler);
+	constructor(world: World) {
+		function handleKeypress() {
+			// ... implementation
+		}
+		world
+			.addEventListener('start', () => {
+				document.addEventListener('keydown', handleKeypress);
+			})
+			.addEventListener('stop', () => {
+				document.removeEventListener('keydown', handleKeypress);
+			});
 	}
 }
 ```
 
-As you can see above, you can put any setup code you need in this method. If
-your resource has an `initialize` method, it'll be called once with the world
-initializing when that world is being built. If your setup is async, the
-`initialize` method is also allowed to return a promise, which will be `await`ed
-before continuing to build the world.
+## System Resources
 
-Resources are not required to have an `initialize` method, **but it will be
-called if it exists** - you cannot use this method name for something else.
+System Resources are a variation of resources that are unique _per system_,
+rather than per world. This means that multiple system resources of the same
+type can exist in the world. A system can also have multiple of the same type of
+system resource, each containing different values:
+
+```ts
+class A {
+	value: number = 0;
+}
+
+function mySystem(a1: Res<A>, a2: Res<A>) {
+	console.log(a1 === a2); // -> true
+}
+function mySystem(a1: SystemRes<A>, a2: SystemRes<A>) {
+	console.log(a1 === a2); // -> false
+}
+```
+
+Apart from their scope, system resources function identically to normal
+resources; the same class could be used both as a system resource and as a world
+resource.

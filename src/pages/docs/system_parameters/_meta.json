@@ -3,8 +3,8 @@
 		{ "path": "commands", "title": "Commands" },
 		{ "path": "queries", "title": "Queries" },
 		{ "path": "resources", "title": "Resources" },
-		{ "path": "system_resources", "title": "System Resources" },
 		{ "path": "events", "title": "Events" },
-		{ "path": "world", "title": "World" }
+		{ "path": "world", "title": "World" },
+		{ "path": "threads", "title": "Threads" }
 	]
 }

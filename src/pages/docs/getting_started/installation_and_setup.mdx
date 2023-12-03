@@ -30,34 +30,30 @@ To get started with Thyseus, install the core library:
 ## Transformer Setup
 
 <Callout type="note">
-	**This guide assumes that you are using a
-	[Rollup](https://rollupjs.org/)-based bundler.** The official Thyseus
-	transformer is available as a (Vite-compatible) Rollup plugin. If you'd like
-	support to be added for your bundler of choice, please [file a
+	The official Thyseus transformer is available as a (Vite-compatible)
+	[Rollup](https://rollupjs.org/) plugin. If you'd like support to be added
+	for your bundler of choice, please [file a
 	ticket](https://github.com/JaimeGensler/thyseus/issues/new)!
 </Callout>
 
-Thyseus makes use of a Typescript transformer to provide better DX. The docs
-will assume you're using the transformer - if you're not, you'll need to
-[review the systems docs](/docs/core_concepts/systems#systems-without-the-transformer).
-
-The transformer requires the use of Typescript; if you don't have experience
-with Typescript, it's recommended that you
+Thyseus makes use of a Typescript transformer to provide better DX. If you're
+not using the transformer, you'll need to review
+"[Systems Without the Transformer](/docs/core_concepts/systems#systems-without-the-transformer)."
+The transformer also requires Typescript; if you don't have experience with
+Typescript, it's recommended that you
 [get familiar with the basics](https://www.typescriptlang.org/docs/handbook/typescript-in-5-minutes.html)
 before starting with Thyseus.
-
-Currently, the transformer is available for Rollup.
 
 {/* prettier-ignore */}
 <Tabs items={['Rollup', 'Vite']}>
 	<Tabs.Panel>
-		The Thyseus transformer for Rollup is a plugin. Install:
-
+		Install...
+		
     	```sh
     	pnpm add typescript @thyseus/rollup-plugin-thyseus
     	```
 
-    	And configure:
+    	...and configure.
 
     	```ts filename="rollup.config.js" {1,2,7,8}
     	import thyseusPlugin from 'thyseus-plugin';
@@ -75,13 +71,13 @@ Currently, the transformer is available for Rollup.
     	Note that `thyseusPlugin()` **must** appear _before_ `typescript()` in order to work, as the plugin transpiles Typescript to Typescript.
     </Tabs.Panel>
     <Tabs.Panel>
-    	The Thyseus transformer for Vite is a compatible Rollup plugin. Install:
+    	Install...
 
     	```sh
     	pnpm add typescript @thyseus/rollup-plugin-thyseus
     	```
 
-    	And configure:
+    	...and configure.
 
     	```ts filename="vite.config.ts" {2,5}
     	import { defineConfig } from 'vite';

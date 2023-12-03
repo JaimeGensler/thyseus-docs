@@ -20,7 +20,7 @@ type Props = {
 export function Author({ id }: Props) {
 	const { photo, name, subtitle } = authors[id];
 	return (
-		<div className="flex items-center gap-2">
+		<div className="flex items-center gap-2 not-prose">
 			<Image
 				className="object-fit rounded-full"
 				width={42}

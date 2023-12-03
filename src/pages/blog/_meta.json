@@ -1,6 +1,12 @@
 {
 	"navigation": [
 		{
+			"path": "v0_16_release",
+			"title": "v0.16 Release",
+			"date": "2023-12-01",
+			"description": "A total rewrite of Thyseus's architecture"
+		},
+		{
 			"path": "v0_15_release",
 			"title": "v0.15 Release",
 			"date": "2023-09-17",

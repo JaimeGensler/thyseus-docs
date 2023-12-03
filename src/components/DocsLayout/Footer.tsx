@@ -35,7 +35,7 @@ type FooterItemProps = {
 };
 function FooterItem({ type, item }: FooterItemProps) {
 	return (
-		<div className="flex flex-col gap-1">
+		<div className="flex flex-col gap-1 not-prose">
 			{item && (
 				<>
 					<span

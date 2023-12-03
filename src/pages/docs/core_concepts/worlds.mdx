@@ -15,33 +15,33 @@ used by multiple worlds, but data belongs to a single world.
 Worlds can be constructed with `new World(config)`. They may add components,
 events, and even systems at any point.
 
+{/* prettier-ignore */}
 ```ts
-import { World } from 'thyseus';
+import { World, Schedule } from 'thyseus';
 import { Inventory, IsPlayer } from './components';
 
-const world = new World().addSystems(inventorySystem);
+const world = await new World()
+	.addSystems(Schedule, inventorySystem)
+	.prepare();
 ```
 
 The `addSystems()` method return the `World` itself so it can be chained. Let's
 add a few more systems!
 
-Of course, it's called `addSystems` for a reason:
-
 {/* prettier-ignore */}
 ```ts {5}
-import { World } from 'thyseus';
+import { World, Schedule } from 'thyseus';
 import { move, draw, handleInput } from './systems';
 
-const myWorldBuilder = World.new()
-	.addSystems(move, draw, handleInput);
+const myWorldBuilder = await World.new()
+	.addSystems(Schedule, [move, draw, handleInput])
+	.prepare();
 ```
 
-## Preparing a World
-
-When you've added all the systems you'd like to get started, you need to
-_prepare_ the world to run. Some systems may require some async setup, so this
-will return a promise. Any time you add new systems to the world, you'll want to
-`prepare()` it again.
+You'll notice we're calling `.prepare()` here - after adding all the systems
+you'd like to get started, you need to _prepare_ the world to run. Some systems
+require some async setup, so this will return a promise. Any time you add new
+systems to the world, you'll need to `prepare()` it again.
 
 {/* prettier-ignore */}
 ```ts {9}
@@ -106,11 +106,10 @@ have a number of different uses - creating groups of systems that only runs when
 your app starts, or when tearing down, or systems that need to run at a fixed
 rate like physics systems.
 
-Thyseus provides the `Schedule` class which stores systems, their arguments, and
-can handle running them. You can create your own schedules by extending this
+Thyseus provides the `Schedule` class which stores systems and their arguments
+and handles running them. You can create your own schedules by extending this
 class - e.g. `class PhysicsSchedule extends Schedule {}`. When calling
-`addSystems()`, systems are added to the `Schedule` class. If you'd like to add
-systems to your own schedule, you can call `addSystemsToSchedule()`.
+`addSystems()`, you _must_ specify a schedule to add systems to.
 
 ## Plugins
 
@@ -130,12 +129,11 @@ import {
 class FixedUpdateSchedule extends Schedule {}
 
 function physicsPlugin(world: World) {
-	world.addSystemsToSchedule(
-		FixedUpdateSchedule,
+	world.addSystems(FixedUpdateSchedule, [
 		applyForces,
 		detectCollisions,
 		resolveCollisions,
-	);
+	]);
 }
 
 const world = await World.new().addPlugin(physicsPlugin).build();

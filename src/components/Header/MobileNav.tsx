@@ -19,7 +19,7 @@ export function MobileNav() {
 			</button>
 
 			{isNavOpen && (
-				<div className="fixed z-50 w-full h-[calc(100%-64px)] top-16 left-0 bg-primary-dark overflow-y-auto tablet:hidden">
+				<div className="fixed z-100 w-full h-[calc(100vh-64px)] top-16 left-0 bg-primary-dark overflow-y-auto tablet:hidden">
 					<ul className="px-2 py-4 flex flex-col gap-4">
 						<MobileNavSection>
 							<MobileNavButton

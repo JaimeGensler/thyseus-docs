@@ -1,0 +1,182 @@
+---
+title: v0.17 - Query Improvements Are Here!
+date: '2024-01-21'
+author: jaime
+---
+
+# Query Improvements Are Here! Thyseus v0.17
+
+I know, I know - another breaking change. But hear me out - it's a _really_
+small break, and I think you're going to like the rest of it!
+
+While working on my own toy projects with Thyseus lately, I've noticed some
+potential for improvement around queries. I didn't think they would be too
+challenging to implement; as it turned out, most of the changes could be (and
+were) implemented in a few hours one afternoon. Suffice to say, the new
+architecture is already paying off!
+
+Let's take a look at everything new in 0.17.
+
+## Breaking Changes
+
+### `Read<T>`, `ReadModifier` removed
+
+Breaking change one - grr! `Read` stepped away from more idiomatic JS while
+providing little value; it's really not intuitive to make methods work with it,
+and it you end up writing some very... _unique_ Typescript. `Readonly<T>` is
+still perfectly valid, and is now simply ignored in transformation as
+ReadModifiers were only ever unwrapped.
+
+### Transformer Config Changed
+
+Breaking change two! If you're not familiar, the transformer plugin allows you
+to pass config so you can extend what is recognized as a system parameter.
+Previously, this config required information about what the name of the
+parameter descriptor was as well as how to import it. This meant you needed a
+stable import no matter the file, which is an unfortunate restriction to impose.
+With the removal of global type injection and the merging of descriptors and
+system parameters, this config is unnecessarily complex!
+
+System parameter config is now simply a map of the parameter name to a boolean
+(`Record<string, boolean>`). If you'd like the parameter to be transformed, the
+boolean should be `true`. If it's `false`, that parameter will simply be skipped
+and its children will be inspected instead (this is how `Readonly<T>` is handled
+now).
+
+## Features
+
+### Async Plugins
+
+Plugins are, of course, a convenient way to encapsulate behavior so you can
+isolate certain groups of systems from other groups. Unfortunately, you can't do
+any sort of async setup with them; or at least, you couldn't before! Plugins can
+now return promises which are awaited first thing when `World.p.prepare()` is
+called (which is _then_ followed by normal system argument creation as before).
+
+### `Maybe<T>`
+
+It's back! Want to access a component if an entity has it, but still have your
+query match if it doesn't? `Maybe` allows you to do exactly that! When an entity
+has the component in question you'll be able to access the component as normal.
+If not, you'll simply get `undefined`.
+
+```ts
+function takeDamage(query: Query<[Health, Maybe<Poison>]>) {
+	for (const [health, poison] of query) {
+		// health: Health
+		// poison: Poison | undefined
+		if (poison) {
+			health -= poison.damage;
+		}
+	}
+}
+```
+
+The possible uses are endless here!
+
+### `Query.p.forEach()` & `Query.p.reduce()`
+
+If you prefer a functional approach to iteration, `forEach` has returned!
+Similarly, if you want to iterate a query and reduce it to a single value,
+`reduce()` has your back too.
+
+### `Query.p.pairs()`
+
+Iterating all unique _pairs_ of elements in your query is a common pattern,
+particularly for basic physics systems. `pairs()` will return an iterator that
+handles finding unique pairs only:
+
+```ts
+function detectCollisions(query: Query<Position>) {
+	for (const [positionA, positionB] of query.pairs()) {
+		// Whatever you need to do here!
+	}
+}
+
+// Tuples too!
+function detectCollisions(query: Query<[Position, Velocity]>) {
+	for (const [[posA, velA], [posB, velB]] of query.pairs()) {
+		// Whatever you need to do here!
+	}
+}
+```
+
+### `Query.p.single()`
+
+Sometimes you know your query will only match a single entity - for example,
+checking for all entities with an `IsPlayer` tag. Having to "iterate" a single
+entity not only feels silly, it fails to portray intent. `Query.p.single()` to
+the rescue!
+
+```ts
+function controlPlayer(
+	player: Query<Position, With<IsPlayer>>,
+	keyboard: Res<Keyboard>,
+) {
+	const playerPosition = player.single();
+	// Rest of the system
+}
+```
+
+Note that `single()` should only be used on queries that have **exactly one**
+match. Using it on queries with zero or multiple matches will cause an error to
+be thrown in dev.
+
+### `Query.p.get()`
+
+Have you ever wanted to get the data for a _specific_ entity out of a query?
+Right now the only real way to do this (without reaching into the world
+yourself) is to iterate the entire query until you find the entity you're after.
+Yuck! We can do a little better:
+
+```ts
+export function moveCar(
+	cars: Query<Car>,
+	carPhysics: Query<[Entity, Transform], With<CarPhysics>>,
+	carVisual: Query<[Entity, Transform], With<CarVisuals>>,
+) {
+	for (const car of cars) {
+		const [physicsEntity, physicsTransform] = carPhysics.get(car.entity);
+		const [visualEntity, visualTransform] = carVisual.get(car.entity);
+	}
+}
+```
+
+## Improvements
+
+### `Readonly`-ification of Internals
+
+If you've been asking for your `Entity` components readonly you may have noticed
+that `Commands` doesn't really like that, despite the fact that it actually
+treats those components as readonly. Most internals have now been updated to
+accept `Readonly<Entity>` objects.
+
+### Dev Warnings
+
+We've introduced a couple new dev-only errors and warnings! First, you'll now
+see a warning when the `applyCommands` system doesn't appear in _any_ schedules
+in a world. For clarity, it's perfectly valid for this to be the case, but 99%
+of the time you do want it. A `console.warn` has been included to indicate that
+this is unusual (but you can simply ignore it), and should help debug empty
+queries in new projects. We've also introduced clearer error messaging when
+`Resource.fromWorld()` doesn't return a value; this threw previously, it now
+just throws earlier and is easier to debug.
+
+## Bug Fixes
+
+### Filters Fixed
+
+`Without` filters were unfortunately broken in the last release, and would fail
+to match any tables. Fixed and tests added!
+
+## What's Next?
+
+No curveballs here! Just continued work on projects in the 1.0 roadmap. Top of
+mind right now are component enums, states, and run conditions. The
+implementation of these will likely be straightforward; the real difficulty lies
+in finding a clean and flexible API. As always, thoughts and suggestions are
+encouraged! Join us in the #thyseus channel of the
+[Web ECS Discord](https://discord.gg/T3g8U89qqZ) or
+[create an issue](https://github.com/JaimeGensler/thyseus/issues) on Github!
+
+Cheers, and until next time!

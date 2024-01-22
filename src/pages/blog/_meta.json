@@ -1,9 +1,15 @@
 {
 	"navigation": [
 		{
+			"path": "v0_17_release",
+			"title": "v0.17 Release",
+			"date": "2024-01-21",
+			"description": "Query improvements are here!"
+		},
+		{
 			"path": "v0_16_release",
 			"title": "v0.16 Release",
-			"date": "2023-12-01",
+			"date": "2023-12-04",
 			"description": "A total rewrite of Thyseus's architecture"
 		},
 		{

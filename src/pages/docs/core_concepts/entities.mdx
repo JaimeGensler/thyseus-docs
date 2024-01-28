@@ -51,7 +51,7 @@ import { Entity } from 'thyseus';
 
 // This query matches every living entity!
 function logAllEntityIds(query: Query<Entity>) {
-	for (const entity in query) {
+	for (const entity of query) {
 		console.log(entity.id);
 	}
 }

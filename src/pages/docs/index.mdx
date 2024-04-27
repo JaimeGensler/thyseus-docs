@@ -6,28 +6,27 @@ title: 'Introduction'
 
 Thyseus is an Entity Component System (ECS) framework written in Typescript.
 Taking much inspiration from [Bevy](https://bevyengine.org/), it aims to provide
-a best-in-class developer experience _without sacrificing performance_.
+a best-in-class developer experience without sacrificing performance.
 
-ECS is a data-oriented design approach to development - typically used for game
-dev - that promotes modularity and reusability by separating data and behavior.
-It consists of **entities**, which are unique identifiers; **components** which
-are plain data without behavior; and **systems**, which operate on data. For a
-good introduction to the paradigm, read the
-[ECS FAQ](https://github.com/SanderMertens/ecs-faq) by Sander Mertens.
+ECS is a data-oriented design approach to development typically found in games
+that promotes modularity and reusability by separating data and behavior. It
+consists of **entities**, which are unique identifiers; **components** which are
+plain data; and **systems**, which operate on data. For a good introduction to
+the paradigm, read the [ECS FAQ](https://github.com/SanderMertens/ecs-faq) by
+Sander Mertens.
 
 Thyseus is a powerful foundation for you to build your own complex applications
 on that remains deeply configureable and composeable. It supports a number of
 features out of the box, including:
 
--   A safety-first approach (no `eval` or eval-like constructs)
--   Hassle-free multithreading
--   Archetypal storage
--   Complex queries
--   Deeply customizable execution logic
--   Dynamically-sized types
--   World-unique data
--   Event handling
--   Fine-grain memory management
--   Integration with third-party libraries
+-   Effortless integration with third-party libraries like
+    [three.js](https://github.com/mrdoob/three.js/).
+-   Archetypal storage for lean memory use and cache-friendly iteration.
+-   Complex queries with filters like `Maybe`, `And`, `Or`, `With`, and
+    `Without`.
+-   First class support for Resources (singletons) and Events.
+-   Boilerplate-free and safety-first worker thread support - no `eval()`!
+-   Deeply customizable execution logic for easy handling of patterns like fixed
+    updates.
 
 Let's dive into it!

@@ -18,27 +18,27 @@ long as every parameter is a system parameter, it's a system.
 
 We've already seen a couple simple systems - let's start by revisiting those.
 
-### Basic Commands System
+### Basic Spawning System
 
-In the entities section, we saw a system that used the `Commands` object.
-`Commands` is one of the built-in system parameters, and is responsible for
-spawning entities. Now that we know about components, let's try spawning an
-entity _and_ adding a component to it:
+In the entities section, we saw a system that used the `World` to spawn
+entities. `World`s are both the entrypoint for an app and one of the built-in
+system parameters, and is responsible for spawning entities. Now that we know
+about components, let's try spawning an entity _and_ adding a component to it:
 
 ```ts
+import { World } from 'thyseus';
+
 import { Health, Transform } from './components';
 
-export function spawnerSystem(commands: Commands) {
-	commands.spawn().add(new Health()).add(new Transform());
+export function spawnerSystem(world: World) {
+	world.spawn().add(new Health()).add(new Transform());
 }
 ```
 
-When this function runs, it will be called with a `Commands` object, which we
-can do whatever we need with - check out the
-[`Commands` page](/docs/system_parameters/commands) to see what else you can do
-with commands!
+When this function runs, it will be called with the `World` object, which we can
+do whatever we need with!
 
-### Basic Queries System
+### Basic Query System
 
 Next, let's look into queries more - they're probably the most used parameter!
 
@@ -79,11 +79,11 @@ we'll do a lot more!
 
 ### Other System Parameters
 
-Queries and Commands are just two of the system parameters Thyseus provides out
+Queries and the world are just two of the system parameters Thyseus provides out
 of the box; your systems can get much more complex, using multiple queries,
-accessing resources, reading & writing events, or accessing the world itself.
-Later sections will cover all of the system parameters in depth - and if you
-need system parameters not provided by Thyseus, you can even
+accessing resources, or reading & writing events. Later sections will cover all
+of the system parameters in depth - and if you need system parameters not
+provided by Thyseus, you can even
 [create your own](/docs/advanced_patterns/custom_system_parameters).
 
 ## System Transformation
@@ -108,8 +108,7 @@ const systemC = (world: World) => {};
 
 -   **Type aliases (including import aliases) are not permitted;** simple
     aliases (`type MyQuery = Query<...>`), or "namespaced" types
-    (`Thyseus.Commands`) will not be transformed. Support for this is planned
-    for a future update.
+    (`Thyseus.Query`) will not be transformed.
 -   **Functions with rest parameters will not be transformed,** even if the
     parameters are typed as a tuple containing only valid system parameters.
 -   **Import classes, not just types.** When using class types, the transformer
@@ -120,31 +119,3 @@ const systemC = (world: World) => {};
 -   **Functions that accept only system parameters will have a `parameters`
     property added, even if they aren't used as systems.** This is more-or-less
     harmless; you can ignore or `//thyseus-ignore` it - up to you!
-
-## Systems Without Transformation
-
-If you're using plain Javascript, are building third-party libraries, or simply
-do not wish to use the transformer plugin, then you will need to provide system
-parameter information yourself. Thyseus uses this information to determine what
-data your systems want from a world, as well as how it's accessed.
-
-Fortunately, writing systems without the transformer only involves one
-additional step - adding a `parameters` property to the function. Here's what
-the above examples would look like without the transformer:
-
-```ts
-import { CommandsDescriptor, QueryDescriptor, Mut } from 'thyseus/descriptors';
-
-export function spawnerSystem(commands: Commands) {
-	commands.spawn().addType(Position).addType(Velocity);
-}
-spawnerSystem.parameters = [CommandsDescriptor()];
-
-export function moveSystem(query: Query<[Mut<Position>, Velocity]>) {
-	for (const [pos, vel] of query) {
-		pos.x += vel.x;
-		pos.y += vel.y;
-	}
-}
-moveSystem.parameters = [QueryDescriptor([Mut(Position), Velocity])];
-```

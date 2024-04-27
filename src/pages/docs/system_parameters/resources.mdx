@@ -33,8 +33,7 @@ class Renderer {
 }
 ```
 
-Thyseus must When these resources are used by systems, they will be refering to
-the same object.
+All systems that use the same resource type refer to the same object.
 
 ```ts
 class MyResource {}
@@ -47,8 +46,8 @@ function systemB(myResource: Res<MyResource>) {
 }
 ```
 
-Like components, resources can be wrapped in `Readonly` or `Read` if you'd like
-to narrow the type.
+Like components, resources can be wrapped in `Readonly` if you'd like to narrow
+the type.
 
 ```ts
 class MyResource {}
@@ -56,21 +55,22 @@ class MyResource {}
 function someSystem(myResource: Res<Readonly<MyResource>>) {}
 ```
 
-Resources must either implement a static `fromWorld() {}` method, or be directly
-inserted into the world with `World.p.insertResource()`.
+Resources must either implement a static `fromWorld() {}` method, be
+constructable with no arguments, or be directly inserted into the world with
+`World.p.insertResource()`.
 
 <Callout type="tip">
-	If you have a type that you'd like to use as multiple resources, you can
-	simply subclass it.
+	If you'd like to use the same type for multiple resources, you can simply
+	subclass it.
 </Callout>
 
 ## Initializing Resources
 
 If you'd like your resources to be automatically created by the world, you can
 implement the static `fromWorld() {}` method that will be called when schedules
-are prepared. This method will be passed the `world` building the resource, and
-so can insert _additional_ resources or event listeners. This method can also
-simply return an instance of the class.
+are prepared. This method will be passed the `world`, and so can insert
+_additional_ resources or event listeners. This method can also simply return an
+instance of the class.
 
 `fromWorld()` must return either an instance of the resource you'd like to
 create, **or a promise** that resolves to that instance.
@@ -85,7 +85,7 @@ class Keyboard {
 
 	constructor(world: World) {
 		function handleKeypress() {
-			// ... implementation
+			// ... your implementation here ...
 		}
 		world
 			.addEventListener('start', () => {
@@ -98,22 +98,23 @@ class Keyboard {
 }
 ```
 
-## System Resources
+## Local Resources
 
-System Resources are a variation of resources that are unique _per system_,
-rather than per world. This means that multiple system resources of the same
-type can exist in the world. A system can also have multiple of the same type of
-system resource, each containing different values:
+Local Resources or "System Resources" are a variation of resources that are
+unique _per system_, rather than per world. They can typically be used in place
+of closures over module-scope variables (although module-scope variables are
+fine, too!). Systems can also have multiple local resources of the same type,
+and each will be unique:
 
 ```ts
-class A {
-	value: number = 0;
-}
+import { Res, Local } from 'thyseus';
 
-function mySystem(a1: Res<A>, a2: Res<A>) {
+import { Vec3 } from 'some-math-library';
+
+function mySystem(a1: Res<Vec3>, a2: Res<Vec3>) {
 	console.log(a1 === a2); // -> true
 }
-function mySystem(a1: SystemRes<A>, a2: SystemRes<A>) {
+function mySystem(a1: Local<Vec3>, a2: Local<Vec3>) {
 	console.log(a1 === a2); // -> false
 }
 ```

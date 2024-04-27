@@ -2,8 +2,6 @@
 title: Entities
 ---
 
-import { Doc } from ':ui';
-
 # Entities
 
 Entities can represent any concrete "thing" in your game world; players,
@@ -18,33 +16,32 @@ _components_, the data that belongs to an entity.
 
 ## Creating Entities
 
-New entities can be created using `Commands`. We'll cover systems and the
-`Commands` API more in the future - for now, we'll write some _very_ simple
-systems to show you how to work with entities!
+`World`s take responsibility for creating new entities. We'll cover worlds and
+the systems more in the future - for now, we'll write some _very_ simple systems
+to show you how to work with entities!
 
 ```ts
-function spawnEntity(commands: Commands) {
-	const entity = commands.spawn();
-	console.log(entity.id); // This will always be a (u64) bigint.
+function spawnEntity(world: World) {
+	const entity = world.spawn();
+	console.log(entity.id); // -> a number!
 }
 ```
 
-This is a basic system that accepts the `Commands` object. `commands.spawn()`
-_queues_ an entity to be spawned and returns an `EntityCommands` object. This
-object can be used to queue additional commands to insert (or remove) components
-for that entity. It also provides a getter to see the id of the newly spawned
-entity.
+This is a basic system that accepts the `World`. `World.p.spawn()` creates a new
+`Entity` object and returns it. You can then add (or remove) components from
+that entity!
 
-**Entities are not created immediately**. Instead, `Commands` reserves an id and
-adds the entity creation request to a queue. Entities are created later when the
-`applyCommands` system runs, which drains the queue of all commands. Created
-entities are not observable until _after_ commands have been applied!
+**Entity creation and changes are not handled immediately**. When you `spawn()`
+an entity or change its components, these changes are added to a _queue_, which
+is processed later - by default, after a schedule finishes executing. Changes to
+entities (including spawning and despawning) are not observable until _after_
+this queue of changes has been processed!
 
 ## Accessing Entities
 
-Every entity possesses a special `Entity` component. This component allows you
-to access the entity's index, generation, and id, and can be queried for in
-systems (_queries will be covered more later, too!_).
+Every entity possesses an `Entity` component. This component allows you to
+access the entity's id, enqueue changes to it, check what components it has, and
+can be queried for in systems (_queries will be covered more later, too!_).
 
 ```ts
 import { Entity } from 'thyseus';
@@ -64,17 +61,13 @@ despawned, `isAlive` will be false.
 
 ## Destroying Entities
 
-Of course, not all entities will live forever. You can use `Commands` or
-`EntityCommands` to queue an entity for destruction; **just like creation,
-entities are not destroyed until the `applyCommands()` system runs**!
+Of course, not all entities will live forever. You can use the `Entity`
+component to queue an entity for destruction:
 
 ```ts
-function destroyAllEntities(commands: Commands, allEntities: Query<Entity>) {
+function destroyAllEntities(allEntities: Query<Entity>) {
 	for (const entity of allEntities) {
-		// Use the whole entity
-		commands.despawn(entity);
-		// Or the id, if that's all you had
-		commands.despawnById(entity.id);
+		entity.despawn();
 	}
 }
 ```

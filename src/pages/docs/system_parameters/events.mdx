@@ -13,10 +13,8 @@ events can be pushed to the queue with `EventWriter<T>`, and events in the queue
 can be read with `EventReader<T>`.
 
 **Events have no set lifetime** - they will persist until the queue is manually
-cleared. Both readers and writers can call the `clear()` method to queue a
-command that will empty the event queue the next time commands are processed.
-This only clears events of the queue's event type, and not queues for other
-event types.
+cleared. Writers can call the `clear()` method to remove all events from the
+current queue, or you can add the `clearAllEventQueues` system to your schedule!
 
 ## `EventReader`
 

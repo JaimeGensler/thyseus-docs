@@ -47,9 +47,24 @@ In this case, the query will yield `[Position, Velocity]` tuples. You can use
 tuples of any size to specify the components you need, but you cannot nest
 tuples.
 
-You may also wrap your components in `Readonly<T>` or Thyseus's strict `Read<T>`
-type if you'd like to narrow the types further and prevent unwanted
-modifications to objects.
+You may also wrap your components in `Readonly<T>` if you'd like to narrow the
+types further.
+
+### Optional Access
+
+If you'd like to access data only if it exists, but still have queries match if
+not, you can use `Maybe<T>` modifiers. These will yield either the queried
+component or undefined.
+
+```ts
+import { Query, Maybe } from 'thyseus';
+
+function mySystem(query: Query<[A, Maybe<B>]>) {
+	for (const [a, maybeB] of query) {
+		console.log(a, maybeB);
+	}
+}
+```
 
 ## Filters
 

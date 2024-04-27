@@ -1,6 +1,5 @@
 {
 	"navigation": [
-		{ "path": "commands", "title": "Commands" },
 		{ "path": "queries", "title": "Queries" },
 		{ "path": "resources", "title": "Resources" },
 		{ "path": "events", "title": "Events" },

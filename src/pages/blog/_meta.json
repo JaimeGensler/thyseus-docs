@@ -1,6 +1,12 @@
 {
 	"navigation": [
 		{
+			"path": "v0_18_release",
+			"title": "v0.18 Release",
+			"date": "2024-04-27",
+			"description": "Some QOL wins"
+		},
+		{
 			"path": "v0_17_release",
 			"title": "v0.17 Release",
 			"date": "2024-01-21",

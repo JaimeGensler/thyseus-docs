@@ -1,0 +1,88 @@
+---
+title: v0.18 - Some QOL Wins
+date: '2024-04-27'
+author: jaime
+---
+
+# Thyseus v0.18 - Some QOL Wins
+
+Keeping it brief this time, this update focuses on some minor quality of life
+changes - specifically, replacing `Commands`/`EntityCommands`/`applyCommands`
+and adding a sensible default for when entities are updated (which can still be
+customized). Overall, migrating to this version should be fairly straightforward
+and painless, and Thyseus's bundle size has dropped by another 15-20%.
+
+The primary motivation for this change is reducing indirection - you already
+needed `Entity` objects to work with `Commands` anyway, so we opted to make the
+APIs a little more direct. Note that **changes to an entity's components are
+still enqueued** and you can add the new `applyEntityUpdates` system to have
+these changes processed.
+
+## 💥 Breaking Changes
+
+-   Removed `Commands`
+-   Removed `EntityCommands`
+-   Removed `applyCommands`
+-   Removed `Entity.p.index`, `Entity.p.generation`; `Entity.p.id` changed from
+    `bigint` to `number`
+    -   Entities no longer use generational indexes, preferring a simple
+        auto-incrementing integer
+    -   It's possible generational indexes will make a comeback in the future,
+        but `id` should stay a number
+-   Removed `Entity.p.is()`
+    -   You can compare `Entity` objects with normal `===` as each object is
+        unique, or with `entity.id` if you prefer.
+-   Removed `EventReader.p.clear()`, `EventWriter.p.clearImmediate()`
+-   `EventWriter.p.clear()` now immediately clears the queue.
+-   Renamed `SystemRes<T>` to `Local<T>`
+    -   This is a much more intuitive name. It also matches Bevy!
+-   Modified `Entities` methods
+    -   As a reminder, until 1.0 `Entities` should more-or-less be considered an
+        implementation detail and will not necessarily have a stable API; use
+        with caution.
+
+## ✨ Features
+
+-   Added `World.p.spawn()`
+    -   Returns a new `Entity` with a unique id; should work as a drop-in
+        replacement for `Commands.p.spawn()`
+-   Added `Entity.p.add()` `Entity.p.addType()`, `Entity.p.remove()` and
+    `Entity.p.despawn()` methods
+    -   These function identically as their prior `EntityCommands` counterparts
+-   Added `Entity.p.has()`
+    -   Pass a component class to see if an entity has that component or not
+    -   Sorry this one took so long to make it back in!
+-   Added `applyEntityUpdates` system
+    -   Entity spawning, despawning, and component add/remove is handled here,
+        so this is generally a drop-in replacement for `applyCommands`
+-   Added `entityUpdateTiming: 'before' | 'after' | 'custom'` to World config
+    -   `'before'` means entities are updated before systems are executed by
+        `World.p.runSchedule()`
+    -   `'after'` means entities are updated _after_ systems have executed with
+        `World.p.runScheudle()
+    -   `'custom'` means entities will not update by default; they can be
+        updated with `applyEntityUpdates` in this case
+    -   Defaults to `'after'`
+-   Added `clearAllEventQueues` system
+    -   This is a simple utility system that works as the name implies. If
+        you're typically calling `clear()` every time you read events, just add
+        this to the schedule instead
+-   Classes used with `Res<T>` and `Local<T>` are no longer required to have a
+    static `fromWorld()` property
+    -   In case of its absence, the constructor will be called with no arguments
+-   Filters that aren't used should now by tree-shakeable
+    -   Individual filters are _really_ small so this isn't a meaningful gain,
+        but it sure is neat!
+
+## What's Next?
+
+Development has slowed down quite a bit, mainly because I'm spending more time
+_using_ Thyseus now that it's in solid shape and feels intuitive to work with.
+This new perspective of library consumer rather than maintainer is largely
+responsible for these QOL improvements.
+
+All that said, the long and short term goals of the library have not changed, I
+am still maintaining Thyseus and will continue to do so, and bug reports &
+feature requests are still very welcome and will be addressed.
+
+Cheers, and until next time!

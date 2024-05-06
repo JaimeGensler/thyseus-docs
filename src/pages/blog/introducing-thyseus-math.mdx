@@ -1,0 +1,57 @@
+---
+title: Introducing @thyseus/math
+date: '2024-05-05'
+author: jaime
+---
+
+# Introducing `@thyseus/math`
+
+Recently I've taken interest in rendering - specifically, handwriting WebGPU
+renderers. I've worked on a number of different toys, and have consistently
+found myself copying around a set of math primitives (`Vec3`, `Mat4`, and the
+likes). [`gl-matrix`](https://github.com/toji/gl-matrix) is a fantastic and
+well-maintained library, but Thyseus requires you to work with class instances,
+which poses a bit of a problem here.
+
+I've taken the time to class-ify some of the types I've needed the most,
+re-implementing them internally to remove a dependency and delete a little code
+here and there that isn't used for these implementations. This is essentially a
+re-implementation/redistribution of the work done by the `gl-matrix` folks - all
+credit really goes to [Toji](https://github.com/toji) and the maintainers.
+
+As this page and the annotations will have to serve as documentation for the
+time being, the library provides:
+
+-   Classes
+    -   `Mat4`
+    -   `Quat`
+    -   `Vec2`
+    -   `Vec3`
+    -   `Vec4`
+-   Functions
+    -   `clamp(min: number, value: number, max: number): number`
+    -   `degreesToRadians(degrees: number): number`
+    -   `radiansToDegrees(radians: number): number`
+-   Constants
+    -   `HALF_PI`
+    -   `PI`
+    -   `TAU`
+    -   `ORIGIN`
+    -   `EPSILON`
+    -   `NORTH` / `SOUTH` / `EAST` / `WEST` / `UP` / `DOWN`
+
+Additionally, these were built with a few guiding principles in mind:
+
+-   `this` is mutable; arguments are immutable.
+    -   Methods never mutate passed arguments, only `this`
+-   No hidden object creation.
+    -   Methods other than `clone()` never create objects
+-   Fully tree-shakeable
+    -   While some methods assume certain types as arguments, there are no
+        internal dependencies so you only pay for what you use
+
+Hopefully this helps some other people wanting to use gl-matrix with Thyseus! If
+you find yourself needing any classes or methods not provided now, feel free to
+open a feature request.
+
+Cheers, and until next time!

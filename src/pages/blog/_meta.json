@@ -1,6 +1,12 @@
 {
 	"navigation": [
 		{
+			"path": "introducing-thyseus-math",
+			"title": "Introducing @thyseus/math",
+			"date": "2024-05-05",
+			"description": "A library of math primitives for Thyseus!"
+		},
+		{
 			"path": "v0_18_release",
 			"title": "v0.18 Release",
 			"date": "2024-04-27",

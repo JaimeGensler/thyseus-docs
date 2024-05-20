@@ -1,0 +1,123 @@
+<script lang="ts">
+	import { Meta } from ':ui';
+</script>
+
+<Meta title="Systems" />
+
+# Systems
+
+Systems are the functionality of an ECS application. Most often, systems are
+used to query for entities with particular components, but they can also be used
+to spawn entities, handle events, draw to canvases, serialize data & write it to
+files, or anything else you might need them to do.
+
+## Defining Systems
+
+Systems being functionality, it's only natural for them to be `function`s! A
+function is a system if it accepts only "system parameters". They may accept
+zero, one, or many parameters - even multiple of the same type of parameter! So
+long as every parameter is a system parameter, it's a system.
+
+We've already seen a couple simple systems - let's start by revisiting those.
+
+### Basic Spawning System
+
+In the entities section, we saw a system that used the `World` to spawn
+entities. `World`s are both the entrypoint for an app and one of the built-in
+system parameters, and is responsible for spawning entities. Now that we know
+about components, let's try spawning an entity _and_ adding a component to it:
+
+```ts
+import { World } from 'thyseus';
+
+import { Health, Transform } from './components';
+
+export function spawnerSystem(world: World) {
+	world.spawn().add(new Health()).add(new Transform());
+}
+```
+
+When this function runs, it will be called with the `World` object, which we can
+do whatever we need with!
+
+### Basic Query System
+
+Next, let's look into queries more - they're probably the most used parameter!
+
+```ts
+import { Position, Velocity } from './components';
+
+export function moveSystem(query: Query<[Position, Velocity]>) {
+	for (const [pos, vel] of query) {
+		console.log(pos, vel);
+	}
+}
+```
+
+There's a lot more going on here, so let's work through it piece by piece.
+
+```ts {1}
+export function moveSystem(query: Query<[Position, Velocity]>) {
+	// ...
+}
+```
+
+First, we define a system that accepts one argument - a `Query`. This query will
+look for entities that have both a `Position` and a `Velocity` component - every
+entity that has _at least_ both of these components will match this query.
+
+```ts {2-4}
+export function moveSystem(query: Query<[Mut<Position>, Velocity]>) {
+	for (const [pos, vel] of query) {
+		console.log(pos, vel);
+	}
+}
+```
+
+In the function body, we're iterating over the query - this means we're getting
+the `Position` and `Velocity` components for every entity the query matches. For
+each entity, we're simply logging the position and velocity. In future examples,
+we'll do a lot more!
+
+### Other System Parameters
+
+Queries and the world are just two of the system parameters Thyseus provides out
+of the box; your systems can get much more complex, using multiple queries,
+accessing resources, or reading & writing events. Later sections will cover all
+of the system parameters in depth - and if you need system parameters not
+provided by Thyseus, you can even
+[create your own](/docs/advanced_patterns/custom_system_parameters).
+
+## System Transformation
+
+The transformer takes care of making sure that systems receive the arguments
+they need. It comes with a couple usage caveats.
+
+-   **Only function declarations and functions in variable initialization are
+    transformed.** Function expressions passed inline to other functions won't
+    be transformed, but you can always provide parameters manually.
+
+```ts
+// This works great!
+function systemA(world: World) {}
+
+// This too!
+const systemB = function systemBInner(world: World) {};
+
+// And of course we wouldn't forget about arrow functions!
+const systemC = (world: World) => {};
+```
+
+-   **Type aliases (including import aliases) are not permitted;** simple
+    aliases (`type MyQuery = Query<...>`), or "namespaced" types
+    (`Thyseus.Query`) will not be transformed.
+-   **Functions with rest parameters will not be transformed,** even if the
+    parameters are typed as a tuple containing only valid system parameters.
+-   **Import classes, not just types.** When using class types, the transformer
+    assumes the actual class is in scope; if you get a reference error, it's
+    probably this.
+-   **Systems can't be generic.** Of course, you can still create generic "base"
+    functions and call them in systems with your non-generic data.
+-   **Functions that accept only system parameters will have a `parameters`
+    property added, even if they aren't used as systems.** This is more-or-less
+    harmless; you can ignore or `//thyseus-ignore` it - up to you!

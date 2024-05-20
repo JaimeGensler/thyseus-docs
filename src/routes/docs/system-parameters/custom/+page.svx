@@ -1,0 +1,98 @@
+<script lang="ts">
+	import { Meta, Callout } from ':ui';
+</script>
+
+<Meta title="Custom System Parameters" />
+
+# Custom System Parameters
+
+System parameters are designed in a way that makes it effortless to write your
+own. Any type that describes how to get data from the world can be a system
+parameter!
+
+## Classes
+
+Any type can be a system parameter so long as it provides a
+`static intoArgument()` method. `intoArgument` is called with the `World`
+building the parameter, and the type arguments that parameter received (if any).
+
+In the case of world, this is extremely simple:
+
+```ts
+class World {
+	static intoArgument(world: World) {
+		return world;
+	}
+}
+
+function mySystem(world: World) {}
+```
+
+Queries receive two type arguments:
+
+```ts
+class Query<Accessors, Filters> {
+	static intoArgument<A, F>(world: World, accessors: A, filters: F) {
+		return new Query<A, F>(world, accessors, filters);
+	}
+}
+
+// This system will be built by calling
+// Query.intoArgument(world, [Position, Velocity])
+function mySystem(query: Query<[Position, Velocity]>) {}
+```
+
+Type arguments are **recursively evaluated** - if type arguments are valid
+system parameters, `intoArgument()` will also be called for them.
+
+```ts
+function mySystem(query: Query<Entity, With<IsPoisoned>>) {}
+// This is called as:
+// Query.intoArgument(world, Entity, With.intoArgument(IsPoisoned))
+```
+
+### Wrappers
+
+Some system parameters are merely wrappers rather than classes; for example,
+`Res` and `Local`. These can be implemented by defining a type alongside a plain
+Javascript object of the same name with the required `intoArgument()` method.
+
+```ts
+type Res<T> = T;
+const Res = {
+	intoArgument(world: World, resourceType: Class) {
+		return world.getResource(resourceType);
+	},
+};
+
+type Local<T> = T;
+const Local = {
+	intoArgument(_: World, resourceType: Class) {
+		return new resourceType();
+	},
+};
+```
+
+## Transformation
+
+The transformer plugin accepts config that allows you to register additional
+system parameter types. Like first-party parameters, custom parameters must be
+in scope of the system using the parameter.
+
+```ts
+export default defineConfig({
+	plugins: [
+		thyseus({
+			systemParameters: {
+				MyCustomParameter: true,
+			},
+		}),
+	],
+});
+```
+
+System parameters can either be **transformed** or **pass-through**. Transformed
+system parameters behave as has been discussed and require `intoArgument()`.
+Pass-through parameters will be recognized as system parameters, but will be
+skipped when the transformer generates code. By default, `Readonly<T>` is a
+pass-through parameter.

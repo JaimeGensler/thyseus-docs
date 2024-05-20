@@ -1,0 +1,98 @@
+<script lang="ts">
+	import { Meta, Callout } from ':ui';
+</script>
+
+<Meta title="Components" />
+
+# Components
+
+A component is a self-contained unit of data that belongs to an entity. An
+entity can have 0 or more components and can add or remove components throughout
+the course of its life. Components can describe any data belonging to an entity,
+such as `Transform`, `Health`, `Inventory`, `IsPlayer`, and anything else you
+need.
+
+## Writing Components
+
+Components are modeled as normal Javascript classes - they may contain fields of
+any type, as well as constructors and methods.
+
+```ts
+class Health {
+	current: number = 0;
+	max: number = 0;
+}
+```
+
+<Callout type="note">
+	Thyseus identifies the types of components by looking at the object's
+	inherent `constructor` property. As a result, plain Javascript objects
+	cannot be used as components!
+</Callout>
+
+Here we've defined an isolated component that determines an entity's health. Of
+course, there's nothing stopping `current` from exceeding `max`, which we likely
+do not want. This is a great case for methods:
+
+<!-- prettier-ignore -->
+```ts {6-10,14-17}
+class Health {
+	#max: number = 0;
+	#current: number = 0;
+
+	heal(amount: number) {
+		// Clamp to max
+		this.#current = Math.min(this.#max, this.#current + amount);
+	}
+
+	takeDamage(amount: number): boolean {
+		// Clamp to 0, we don't need to go any lower
+		this.#current = Math.max(0, this.#current - amount);
+		// Return a boolean indicating if this entity died
+		return this.#current === 0;
+	}
+}
+```
+
+We've converted the `max` and `current` properties to be `#` private, requiring
+consumers to use the `heal()` and `takeDamage()` methods. This protects our
+fields from unexpected combinations while keeping our code dry, localized, and
+easily testable.
+
+Components can define constructors and be extended as needed
+
+```ts {6-9}
+class Health {
+	#max: number;
+	#current: number;
+
+	constructor(max: number, current: number = max) {
+		this.#max = max;
+		this.#current = current;
+	}
+}
+
+class Vec2 {
+	x: number = 0;
+	y: number = 0;
+}
+class Vec3 extends Vec2 {
+	z: number = 0;
+}
+
+class Position extends Vec3 {}
+class Velocity extends Vec3 {}
+```
+
+## Tag Components
+
+In some cases, you may want to add a "tag" to an entity (e.g., `IsPlayer`) but
+have no additional data associated with that component. While normal components
+work just fine for this, Thyseus allows you to create "tag" components -
+sometimes referred to as "zero-sized types" (ZSTs).
+
+```ts
+import { Tag } from 'thyseus';
+
+class IsPlayer extends Tag {}
+```

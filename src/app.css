@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+svg {
+	height: 1em;
+}
+svg[data-icon='true'] {
+	width: 1em;
+}
+
+:root {
+	--text-primary: white;
+	--text-secondary: hsl(208, 20%, 80%);
+	--text-inverse: hsl(208, 40%, 10%);
+	--background-primary: hsl(208, 35%, 10%);
+	--background-secondary: hsl(208, 35%, 20%);
+
+	--shiki-color-text: #d1d1d1;
+	--shiki-token-constant: #79b8ff;
+	--shiki-token-string: #ffab70;
+	--shiki-token-comment: #6b737c;
+	--shiki-token-keyword: #f97583;
+	--shiki-token-parameter: #ff9800;
+	--shiki-token-function: #b392f0;
+	--shiki-token-string-expression: #4bb74a;
+	--shiki-token-punctuation: #bbbbbb;
+	--shiki-token-link: #ffab70;
+}
+
+.line {
+	padding-left: 1rem;
+	padding-right: 1rem;
+	border-left-width: 1px;
+	border-left-color: transparent;
+}
+pre code {
+	display: grid;
+}
+.highlighted {
+	border-left-color: hsl(217, 91%, 60%);
+	background-color: hsl(217, 91%, 60%, 0.15);
+}

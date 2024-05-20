@@ -1,0 +1,98 @@
+<script lang="ts">
+	import { Meta, Tabs, Callout } from ':ui';
+</script>
+
+<Meta title="Installation & Setup" />
+
+# Installation & Setup
+
+To get started with Thyseus, install the core library:
+
+<!-- prettier-ignore -->
+<Tabs items={['pnpm', 'yarn', 'npm']}>
+	<Tabs.Panel>
+		```sh
+		pnpm add thyseus
+		```
+	</Tabs.Panel>
+	<Tabs.Panel>
+		```sh
+		yarn add thyseus
+		```
+	</Tabs.Panel>
+	<Tabs.Panel>
+		```sh
+		npm i thyseus
+		```
+	</Tabs.Panel>
+</Tabs>
+
+## Transformer Setup
+
+<Callout type="note">
+	The official Thyseus transformer is available as a (Vite-compatible)
+	[Rollup](https://rollupjs.org/) plugin. If you'd like support to be added
+	for your bundler of choice, please [file a
+	ticket](https://github.com/JaimeGensler/thyseus/issues/new)!
+</Callout>
+
+Thyseus makes use of a Typescript transformer to provide better DX. If you're
+not using the transformer, you'll need to review
+"[Systems Without the Transformer](/docs/core_concepts/systems#systems-without-the-transformer)."
+The transformer also requires Typescript; if you don't have experience with
+Typescript, it's recommended that you
+[get familiar with the basics](https://www.typescriptlang.org/docs/handbook/typescript-in-5-minutes.html)
+before starting with Thyseus.
+
+<!-- prettier-ignore -->
+<Tabs items={['Rollup', 'Vite']}>
+	<Tabs.Panel>
+	Install... `sh pnpm add typescript @thyseus/rollup-plugin-thyseus `
+
+    	...and configure.
+
+    	```ts filename="rollup.config.js" {1,2,7,8}
+    	import thyseusPlugin from 'thyseus-plugin';
+    	import typescript from 'rollup-plugin-typescript2';
+
+    	export default {
+    		// ...
+    		plugins: [
+    			thyseusPlugin(),
+    			typescript(),
+    		],
+    	};
+    	```
+
+    	Note that `thyseusPlugin()` **must** appear _before_ `typescript()` in order to work, as the plugin transpiles Typescript to Typescript.
+    </Tabs.Panel>
+    <Tabs.Panel>
+    	Install...
+
+    	```sh
+    	pnpm add typescript @thyseus/rollup-plugin-thyseus
+    	```
+
+    	...and configure.
+
+    	```ts filename="vite.config.ts" {2,5}
+    	import { defineConfig } from 'vite';
+    	import { thyseusPlugin } from '@thyseus/rollup-plugin-thyseus';
+
+    	export default defineConfig({
+    		plugins: [thyseusPlugin()],
+    	});
+    	```
+    </Tabs.Panel>
+
+</Tabs>
+
+## Development vs. production builds
+
+Thyseus uses [`esm-env`](https://github.com/benmccann/esm-env) to determine
+whether you're building your app for development or production. Dev builds have
+a number of additional correctness checks and validations that help you make
+sure your app works correctly and that thrown errors are easily debuggable.
+These checks come at the cost of speed, so for production builds these checks
+are stripped out. **As long as you're using a modern bundler, this should happen
+automatically.**

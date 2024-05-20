@@ -1,0 +1,237 @@
+---
+title: v0.16 Release
+date: '2023-12-01'
+author: jaime
+---
+
+# v0.16 Released
+
+In the last blog post I mentioned that there were no particularly large plans
+for the near future - so naturally, within a week I was rethinking Thyseus's
+fundamental architecture. I spent some time working out the weakpoints as well
+as what causes them, challenging many of the assumptions we've made along the
+way. The internal design has changed so much that this update is essentially
+Thyseus 2.0. Fortunately, upgrading to 0.16 should mostly involve deleting code
+and some small tweaks to areas with low surface area, like schedule definition.
+
+This release has a _ton_ of cross-cutting concerns and miscellaneous updates. To
+make it an easier read, we'll first dive in to the internal changes and
+motivations before moving to a simple changelog. Feel free to skip straight to
+the changelog if you want to get going right away!
+
+## Weakpoints & Internal Changes
+
+Thyseus has a lot of strong points - overall, working with the library is fairly
+straightforward, and the way we model concepts like components and systems
+provide a solid foundation. However, there's many areas where Thyseus doesn't
+behave predictably, where we break away from assumptions you can normally make
+when working with Javascript. With the increasing flexibility of WASM and the
+growing number of languages that can target it, the real selling point of a
+Javascript ECS is the language.
+
+So - the main "theme" of this update is **working _with_ Javascript, not against
+it**. Fighting against the language - or trying to outsmart the VM - is a losing
+battle, and has shown up in performance, library DX, and internal productivity.
+It's not too bad in one of these area, but we have issues in all of these,
+making maintenance and use of Thyseus more painful than necessary.
+
+So what exactly is wrong?
+
+-   Multithreading is inflexible and slow (explored in depth later).
+-   The amount of code shipped with all consumers of Thyseus is considerable,
+    while much of it benefits only a subset of users.
+-   Handling components and resources can be counterintuitive.
+    -   Early `return` in systems and `continue`/`break` in queries don't always
+        work.
+    -   Async patterns are tricky.
+    -   Callbacks don't refer to what they appear to.
+-   Internal development iteration is slow.
+    -   Adding/modifying tests is difficult.
+    -   There are too many cross-dependencies, making isolating breaking changes
+        or new features difficult.
+-   Integration with third-party libraries is difficult-to-impossible.
+-   Reaching into the core library is impractical unless you read and understand
+    the entire source code.
+-   Extending worlds at runtime (adding/removing systems, runtime components,
+    etc.) is highly desireable but not possible.
+
+But what's causing all of this? Teasing it apart, the primary issue is the
+current model of parallelism (i.e., the heuristics and APIs it requires), object
+pooling, and memory control.
+
+### Threads
+
+For some time now, I've felt Thyseus has failed to deliver on one of it's big
+selling points - multithreading. While a half-measure solution is in place, it
+has historically been buggy, inflexible, and slow. Writing a sound & performant
+smart scheduler is hard, but more to the point it's become apparent that it's
+not even what most people want from a threading solution. The far more common
+use cases are a dedicated render or physics thread, or a way to free the main
+thread of some non-essential tasks.
+
+With this in mind, I've considered what a solution that meets real needs might
+look like. This new solution would never have been possible without invaluable
+input from [3mcd](https://github.com/3mcd)!
+
+For its first release, the new API is less featured than the previous API; it's
+much more explicit, and requires you to get hands-on with threads,
+synchronization, and data sharing. However, it's also significantly more atomic,
+flexible, and extensible **while remaining safe**. As a bonus, it's much lighter
+weight and can be tree-shaken for those not using threads. The details of how to
+use the new API are included in the changelog.
+
+### Object Pooling & Memory Control
+
+The other issues at the core of Thyseus are largely a result of object pooling
+and backing data with binary types - things we've relied on since the first
+release. The theory was binary types could allow runtimes to generate more
+optimal JIT code, and object reuse would keep memory usage lower and potentially
+be more cache-friendly.
+
+This forgets that Javascript runtimes are really, _really_ good at what they do;
+so good, in fact, that in testing I've consistently seen that it's actually
+faster to just iterate a list of objects. If you keep your object shapes stable
+and Thyseus handles densely packing data in single-type arrays, JIT compilers
+will do the difficult work for us. It's tough to give measurements on the exact
+gains as they vary quite a bit by runtime and object shape, but overall this
+change should be as fast as previous versions and usually faster.
+
+### Conclusion
+
+Putting all of these changes together, we were able to fully remove the `Memory`
+API, `@struct`, binary types, and any memory management. Components, events, and
+resources are just class instances now - any class you'd like - and callbacks
+and promises can reliably refer to component instances.
+
+Ahead-of-time type registration was only a requirement for the previous
+iteration of multithreading to work. With the API changed, `WorldBuilder` can be
+removed and components, resources, events, and systems can all be added at
+runtime. Similarly, system dependencies and immutable default were only needed
+for smart scheduling, and so those APIs have been removed as well. All in all,
+the PR for this release saw a net reduction of around 5,500 lines of code!
+
+All these changes mean **Thyseus has shrunk by around 40%**. Even better, many
+more parts of the library are now tree-shakeable and the transformer has far
+fewer responsibilities, only handling system transformation at the moment.
+
+At this point, working with Thyseus should have no surprises or caveats - write
+Javascript that behaves exactly like you'd think it would and let us hold on to
+your data for you.
+
+### What's Next?
+
+While the changes here weren't the original plan for 0.16, this update has
+solidified the core architecture and unlocked a lot of potential for Thyseus.
+It's also incorporated all of the breaking changes I think are likely for the
+future. I've put together a
+[1.0 roadmap](https://github.com/users/JaimeGensler/projects/3) detailing the
+remaining features Thyseus should have for a 1.0 release. The list may grow or
+shrink and more breaking updates before 1.0 are possible, but at the moment
+these are the planned updates for the forseeable future. As always, feel free to
+request any new features or fixes on
+[Github](https://github.com/JaimeGensler/thyseus/issues) or in the `#thyseus`
+channel of the [Web ECS Discord](https://discord.gg/T3g8U89qqZ)
+
+Cheers, and until next time!
+
+## Changelog
+
+### Breaking Changes
+
+-   Removed `World.new()` and `WorldBuilder`
+    -   Worlds can be constructed with `new World(config)`.
+    -   Added `World.p.addSystems()`, which accepts **two arguments** - a
+        schedule and a system or _array_ of systems.
+    -   An `addSystemsToSchedule()` method no longer exists.
+    -   Added `World.p.addPlugin()`
+        -   Plugins should accept a `World` rather than a `WorldBuilder`.
+    -   Call `World.p.prepare(): Promise<World>` before `World.p.start()` to
+        prepare systems to be run.
+    -   Components, events, resources, and systems can all be added at runtime.
+-   All previous fields of world config removed.
+    -   See features for new fields.
+-   `Memory` removed.
+-   `@struct` removed.
+    -   Decorator and transformer emit removed. Components, resources and events
+        still must be class instances.
+-   **Data is not copied** when adding components or events - objects _are_ data
+    and are treated uniquely.
+-   Sized components must be added with `.add()`, and cannot be added with
+    `.addType()`.
+-   Binary types (e.g. `u8`, `u16`, etc.) removed.
+    -   Use `number` instead.
+-   `DefaultSchedule` and `StartSchedule` removed; schedules are no longer
+    symbols.
+    -   Schedules can be created by using and/or extending the new `Schedule`
+        class (e.g. `class PhysicsSchedule extends Schedule {}`).
+    -   See features for `StartSchedule` replacement.
+-   `Mut<T>` removed.
+    -   Mutability is the new default.
+    -   Wrapping queried components/resources in `Readonly<T>` is permitted.
+-   `run()` function removed.
+    -   Systems will execute in the order they are added (this is identical to
+        past behavior if you were only using single-threaded execution).
+-   Worlds no longer use resource constructors.
+    -   Resources must either define a `static fromWorld()` property or be
+        inserted directly with `World.p.insertResource()`.
+-   System parameter descriptors removed.
+    -   System parameters use a new static `intoArgument()` method.
+-   `system.parameters` removed.
+    -   Systems use a new `system.getSystemArguments()` property.
+    -   Transformer emit has been updated so no changes are required here.
+-   Global type injection import removed.
+
+### Features
+
+-   Any class, with any type of data contained within, can be used as a
+    component, resource, or event!
+    -   Constructors may have required arguments.
+    -   Tag components (ZSTs) can be created by extending the exported `Tag`
+        class, and must be added with `Commands.p.addType()`.
+    -   `Promise.p.then()` and other callbacks will refer to the data/objects
+        you think they will.
+    -   Components/events/resources must still be class instances
+-   World Event Listeners!
+    -   Worlds are now event emitters. You can subscribe to events with
+        `World.p.addEventListener()` and unsubscribe with
+        `World.p.removeEventListener()`.
+    -   Current events are:
+        -   `"start"`, emitted when `World.p.start()` is called.
+        -   `"stop"`, emitted when `World.p.stop()` is called.
+        -   `"createTable"`, emitted when new tables are created.
+-   New Threads API!
+    -   In a thread module, define functions that can be called from the main
+        thread with `expose()`. e.g.
+        ```ts filename="myThreadModule.ts"
+        export default expose({
+        	add(left: number, right: number) {
+        		return left + right;
+        	},
+        });
+        ```
+    -   Access threads in systems with the `Thread<T>` system parameter
+        ```ts filename="mainThreadModule.ts"
+        export function mySystem(
+        	thread: Thread<typeof import('./myThreadModule.ts')>,
+        ) {
+        	const result = await thread.call('add', 2, 2);
+        	console.log(result); // 4
+        }
+        ```
+    -   Use `call()` as many times as needed, and handle the promises however
+        you'd like!
+    -   [Documentation for threads](/docs/system_parameters/threads)
+-   New `Read<T>` type!
+    -   When `Readonly<T>` isn't strict enough, you can use `Read<T>`, which
+        enforces deep immutability and removes mutating methods (methods that
+        don't have their `this` type as `Read<T>`).
+-   Custom commands!
+    -   Create your own command queue class and defer certain effects till the
+        `applyCommands` system.
+    -   More documentation to be added in the future.
+-   New world config options!
+    -   `createWorker(scriptURL: string): WorkerLike` - use to define a custom
+        worker creator. Defaults to a browser-oriented version.
+    -   World config may have custom fields if needed.
+-   Most first-party classes are exported.
+-   Significantly expanded & improved inline documentation.
